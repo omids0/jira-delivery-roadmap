@@ -5,13 +5,14 @@ import { createEnv } from '../render/env.js';
 import { JiraError, getMyself, isValidProjectKey, listProjects } from '../jiraClient.js';
 import { buildModel, summarize } from '../model.js';
 import { qualityNotes } from '../quality.js';
-import { renderHome, renderLoading, renderPage } from '../render/page.js';
+import { renderHome, renderLoading, renderPage, setPageTheme } from '../render/page.js';
 import { loadState, saveState, stateKey } from '../roadmapState.js';
 import { loadSettings, normalizeSettings, saveSettings, settingsKey } from '../settings.js';
 import { mountRoadmap } from './roadmap-ui.js';
 
 const LAST_PROJECT_KEY = 'jira-roadmap:last-project:';
 const CACHE_MS = 60_000;
+const THEME_KEY = 'jira-roadmap:theme';
 
 /**
  * The roadmap running INSIDE a Jira page (via the bookmarklet). Same origin as
@@ -35,11 +36,16 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
   let view = null;
   let seq = 0; // drops answers from a project the user already switched away from
 
+  // explicit choice if the user made one, else the system preference
+  const systemTheme = () => (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const themeNow = () => storage.getItem(THEME_KEY) || systemTheme();
+
   const paint = (html) => {
     const doc = frame.document;
     // The overlay is gone once the user closed it; late answers have nowhere to go.
     if (!doc) return null;
     view = null;
+    setPageTheme(themeNow());
     doc.open();
     doc.write(html);
     doc.close();
@@ -48,12 +54,23 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
       if (e.target?.id === 'jr-project') openProject(e.target.value);
     });
     doc.addEventListener('click', (e) => {
-      const hit = e.target?.closest?.('#jr-close, #jr-confirm');
+      const hit = e.target?.closest?.('#jr-close, #jr-confirm, #jr-theme');
       if (hit?.id === 'jr-close') onClose();
+      else if (hit?.id === 'jr-theme') toggleTheme(doc);
       else if (hit?.id === 'jr-confirm') confirmSettings();
     });
     return doc;
   };
+
+  function toggleTheme(doc) {
+    const next = themeNow() === 'dark' ? 'light' : 'dark';
+    try {
+      storage.setItem(THEME_KEY, next);
+    } catch {
+      // private mode: the choice lasts until the overlay closes
+    }
+    doc.documentElement.dataset.theme = next;
+  }
 
   const settingsOf = (key) => loadSettings(storage, settingsKey(host, key), projectConfig(key));
   const configOf = (key) => ({ ...projectConfig(key), ...settingsOf(key) });

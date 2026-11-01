@@ -5,7 +5,12 @@ import { CSS } from './style.js';
 
 const EXTRA_CSS = `
 .jr-bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
-.jr-bar b{font-size:14px;margin-inline-end:auto}
+.jr-bar b{font-size:14px}
+.jr-bar .jr-end{display:flex;align-items:center;gap:8px;margin-inline-start:auto}
+.jr-bar .jr-ico{padding:4px 10px;min-width:34px}
+.jr-bar .ico-sun{display:none}
+:root[data-theme="dark"] .jr-bar .ico-sun{display:inline}
+:root[data-theme="dark"] .jr-bar .ico-moon{display:none}
 .jr-bar select,.jr-bar button{font:inherit;font-size:13px;padding:4px 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);cursor:pointer}
 .jr-bar .who{color:var(--muted);font-size:12.5px}
 .set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
@@ -16,25 +21,38 @@ const EXTRA_CSS = `
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-const html = (body) => `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>نقشه راه تحویل Jira</title>
+let theme = null;
+/** 'light' | 'dark' | null (follow the system); used for every page painted after this call. */
+export const setPageTheme = (t) => {
+  theme = t === 'light' || t === 'dark' ? t : null;
+};
+
+const html = (body) => `<!doctype html><html lang="fa" dir="rtl"${theme ? ` data-theme="${theme}"` : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>نقشه راه تحویل Jira</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>${CSS}${EXTRA_CSS}</style></head><body>${body}</body></html>`;
 
 export const renderLoading = (text) => html(`<main style="text-align:center;padding:80px 20px;color:var(--muted)">${esc(text)}</main>`);
 
-const bar = ({ projects, user, key }) => `<div class="jr-bar">
+const themeButton = '<button id="jr-theme" class="jr-ico" type="button" aria-label="تغییر پوسته (روز / شب)" title="روز / شب"><span class="ico-moon" aria-hidden="true">☾</span><span class="ico-sun" aria-hidden="true">☀</span></button>';
+
+const bar = ({ projects, user, key, withRefresh = false }) => `<div class="jr-bar">
   <b>نقشه راه تحویل</b>
   <select id="jr-project" aria-label="پروژه">
     <option value=""${key ? '' : ' selected'} disabled>پروژه را انتخاب کنید…</option>
     ${projects.map((p) => `<option value="${esc(p.key)}"${p.key === key ? ' selected' : ''}>${esc(p.key)} — ${esc(p.name)}</option>`).join('')}
   </select>
-  <button id="jr-close" type="button">بستن</button>
-  ${user ? `<span class="who">${esc(user)}</span>` : ''}
+  <div class="jr-end">
+    ${user ? `<span class="who">${esc(user)}</span>` : ''}
+    <span class="r-status" id="refresh-status" aria-live="polite"></span>
+    ${withRefresh ? '<button type="button" id="refresh-btn"><span aria-hidden="true">↻</span> بروزرسانی</button>' : ''}
+    ${themeButton}
+    <button id="jr-close" type="button">بستن</button>
+  </div>
 </div>`;
 
 /** Home / error page: only the project picker. */
 export function renderHome({ projects, user, error = '', fatal = false }) {
-  return html(`${fatal ? `<div class="jr-bar"><b>نقشه راه تحویل</b><button id="jr-close" type="button">بستن</button></div>` : bar({ projects, user, key: null })}
+  return html(`${fatal ? `<div class="jr-bar"><b>نقشه راه تحویل</b><div class="jr-end">${themeButton}<button id="jr-close" type="button">بستن</button></div></div>` : bar({ projects, user, key: null })}
   <div class="wrap">${error ? `<div class="note" style="color:var(--crit)">${esc(error)}</div>` : ''}
   ${fatal ? '' : '<p class="lead">یک پروژه از لیست بالا انتخاب کنید.</p>'}</div>`);
 }
@@ -69,7 +87,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
       <button type="button" id="${id}-dec" aria-label="کم کردن ${label}">−</button><output id="${id}-n">${fa(val, 0)}</output><button type="button" id="${id}-inc" aria-label="اضافه کردن ${label}">+</button></div>`;
   const fld = (id, label, v, extra = '') => `<label class="fld"><span>${label}</span><input id="${id}" value="${esc(v)}" ${extra}></label>`;
 
-  return html(`${bar({ projects, user, key })}
+  return html(`${bar({ projects, user, key, withRefresh: true })}
 <div class="wrap" dir="rtl" lang="fa">
   <header class="top">
     <div class="eyebrow">پروژه ${esc(key)} · کل بک‌لاگ، بدون توجه به اسپرینت</div>
@@ -97,10 +115,6 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     ${toggle('opt-p3', 'فاز ۳ (phase-3)', count('p3'), state.p3)}
     <label class="toggle"><input type="checkbox" id="opt-hist"${state.hist ? ' checked' : ''}><span>استوری‌های انجام‌شدهٔ قبلی</span></label>
     ${toggle('opt-def', 'موارد به‌تعویق‌افتاده (deferred)', count('def'), state.def)}
-    <div class="refresh">
-      <button type="button" class="btn" id="refresh-btn"><span class="ico" aria-hidden="true">↻</span>بروزرسانی از Jira</button>
-      <span class="r-status" id="refresh-status" aria-live="polite"></span>
-    </div>
   </div>
 
   <details class="own" id="settings-box">

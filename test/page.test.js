@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createEngine } from '../src/engine.js';
 import { qualityNotes } from '../src/quality.js';
 import { createEnv } from '../src/render/env.js';
-import { renderHome, renderPage, workweekLabel } from '../src/render/page.js';
+import { renderHome, renderPage, setPageTheme, workweekLabel } from '../src/render/page.js';
 import { baseState, fixture } from '../test-support/fixture.js';
 
 const settings = { team: { be: 1, fe: 1 }, parallelStories: 3, components: { be: 'Back-End', fe: '"><b>x' } };
@@ -50,4 +50,23 @@ test('quality notes: warn only about what is actually missing', () => {
   assert.equal(notes.length, 4);
   assert.match(notes[0], /Blocks/);
   assert.equal(qualityNotes({ ...ok, open: 0, withBlockers: 0 }).length, 0);
+});
+
+test('header: picker sits next to the title; refresh and theme come before close; refresh is not in the controls', () => {
+  const html = page();
+  const at = (s) => html.indexOf(s);
+  assert.ok(at('<b>نقشه راه تحویل</b>') < at('id="jr-project"'));
+  assert.ok(at('id="jr-project"') < at('id="refresh-btn"'));
+  assert.ok(at('id="refresh-btn"') < at('id="jr-theme"') && at('id="jr-theme"') < at('id="jr-close"'));
+  assert.ok(at('id="refresh-btn"') < at('class="controls"'));
+});
+
+test('theme: pages carry data-theme only when one is chosen; every page has the toggle', () => {
+  setPageTheme('dark');
+  assert.match(renderHome({ projects: [], user: '' }), /<html lang="fa" dir="rtl" data-theme="dark">/);
+  assert.ok(renderHome({ projects: [], user: '', fatal: true }).includes('id="jr-theme"'));
+  setPageTheme('light');
+  assert.match(page(), /data-theme="light"/);
+  setPageTheme(null);
+  assert.ok(renderHome({ projects: [], user: '' }).includes('<html lang="fa" dir="rtl">'));
 });
