@@ -1,8 +1,14 @@
+import { buildContext } from '../adapter.js';
 import { fetchProject } from '../collect.js';
+import { createEngine } from '../engine.js';
+import { createEnv } from '../render/env.js';
 import { JiraError, getMyself, isValidProjectKey, listProjects } from '../jiraClient.js';
 import { buildModel, summarize } from '../model.js';
-import { renderHome, renderProject, renderLoading } from '../render/shell.js';
+import { qualityNotes } from '../quality.js';
+import { renderHome, renderLoading, renderPage } from '../render/page.js';
+import { loadState, saveState, stateKey } from '../roadmapState.js';
 import { loadSettings, normalizeSettings, saveSettings, settingsKey } from '../settings.js';
+import { mountRoadmap } from './roadmap-ui.js';
 
 const LAST_PROJECT_KEY = 'jira-roadmap:last-project:';
 const CACHE_MS = 60_000;
@@ -10,10 +16,6 @@ const CACHE_MS = 60_000;
 /**
  * The roadmap running INSIDE a Jira page (via the bookmarklet). Same origin as
  * Jira, so requests carry the user's logged-in session: no token, no CORS.
- *
- * Current state: scaffold. It logs in, lists projects, and counts open stories
- * per project to prove the pipe works. The planning engine comes next, see
- * docs/DESIGN.md.
  *
  * @param {object} deps
  * @param {{ document: Document }} deps.frame  where pages are painted (an overlay iframe)
@@ -26,16 +28,18 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
   const session = { baseUrl, token: null, meta: {}, cache: {} };
   const host = new URL(baseUrl).host;
   const lastKey = LAST_PROJECT_KEY + host;
-  let raw = null; // raw Jira issues of the current project; the model is rebuilt from it when settings change
+  let raw = null; // raw Jira issues of the current project; model and plan are rebuilt from it
   let projects = [];
   let user = '';
   let current = null;
+  let view = null;
   let seq = 0; // drops answers from a project the user already switched away from
 
   const paint = (html) => {
     const doc = frame.document;
     // The overlay is gone once the user closed it; late answers have nowhere to go.
-    if (!doc) return;
+    if (!doc) return null;
+    view = null;
     doc.open();
     doc.write(html);
     doc.close();
@@ -44,30 +48,45 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
       if (e.target?.id === 'jr-project') openProject(e.target.value);
     });
     doc.addEventListener('click', (e) => {
-      const hit = e.target?.closest?.('#jr-refresh, #jr-close, #jr-confirm');
-      if (hit?.id === 'jr-refresh') openProject(current, { refresh: true });
-      else if (hit?.id === 'jr-close') onClose();
+      const hit = e.target?.closest?.('#jr-close, #jr-confirm');
+      if (hit?.id === 'jr-close') onClose();
       else if (hit?.id === 'jr-confirm') confirmSettings();
     });
+    return doc;
   };
 
   const settingsOf = (key) => loadSettings(storage, settingsKey(host, key), projectConfig(key));
+  const configOf = (key) => ({ ...projectConfig(key), ...settingsOf(key) });
 
-  const showProject = (saved = false) => {
-    const settings = settingsOf(current);
-    const summary = summarize(buildModel(raw, { ...projectConfig(current), ...settings }));
-    paint(renderProject({ projects, user, key: current, summary, settings, saved }));
-  };
+  function showProject(saved = false) {
+    const cfg = configOf(current);
+    const model = buildModel(raw, cfg);
+    const ctx = buildContext({ raw, model, sprints: raw.sprints, assigned: raw.assigned, cfg, baseUrl, project: current, now: new Date() });
+    const eng = createEngine(ctx);
+    const sKey = stateKey(host, current);
+    const state = loadState(storage, sKey, cfg);
+    const name = projects.find((p) => p.key === current)?.name;
+
+    // an engine/plan failure must not leave a blank overlay
+    try {
+      const page = renderPage(createEnv(ctx, eng, state), {
+        projects, user, key: current, projectName: name, settings: settingsOf(current), saved, notes: qualityNotes(summarize(model))
+      });
+      const doc = paint(page);
+      if (!doc) return;
+      view = mountRoadmap({ doc, ctx, eng, state, persist: () => saveState(storage, sKey, state), onRefresh: () => openProject(current, { refresh: true }) });
+    } catch (err) {
+      console.error('[jira-roadmap]', err);
+      paint(renderHome({ projects, user, error: `ساخت نقشه‌ی راه ناموفق بود: ${err.message}` }));
+    }
+  }
 
   function confirmSettings() {
     const doc = frame.document;
     if (!doc || !current) return;
     const val = (id) => doc.getElementById(id)?.value;
-    const next = normalizeSettings({
-      team: { be: val('jr-be'), fe: val('jr-fe') },
-      parallelStories: val('jr-par'),
-      components: { be: val('jr-cbe'), fe: val('jr-cfe') }
-    }, projectConfig(current));
+    const base = projectConfig(current);
+    const next = normalizeSettings({ ...settingsOf(current), components: { be: val('jr-cbe'), fe: val('jr-cfe') } }, base);
     saveSettings(storage, settingsKey(host, current), next);
     showProject(true);
   }
@@ -89,7 +108,7 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
       if (!refresh && cached && Date.now() - cached.at < CACHE_MS) raw = cached.raw;
       else {
         paint(renderLoading(`در حال دریافت اطلاعات پروژه‌ی ${key} از Jira…`));
-        const fetched = await fetchProject(session, key, { ...projectConfig(key), ...settingsOf(key) }, (t) => mine === seq && paint(renderLoading(t)));
+        const fetched = await fetchProject(session, key, configOf(key), (t) => mine === seq && paint(renderLoading(t)));
         session.cache[key] = { at: Date.now(), raw: fetched };
         raw = fetched;
       }
@@ -118,5 +137,5 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
     paint(renderHome({ projects, user }));
   }
 
-  return { start, openProject };
+  return { start, openProject, get view() { return view; } };
 }
