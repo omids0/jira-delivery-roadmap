@@ -63,6 +63,7 @@ details.person>summary:focus-visible{outline:2px solid var(--accent);outline-off
 .pill::before{content:"";width:7px;height:7px;border-radius:50%}
 .pill.d::before{background:var(--s3)}.pill.w::before{background:var(--s4)}.pill.b::before{background:var(--s7)}
 @media (max-width:640px){.module-row{grid-template-columns:1fr;gap:6px}.module-pct{text-align:right}}
+[hidden]{display:none!important}
 .q-notes{margin:6px 0 0;padding-inline-start:20px;color:var(--fg2);font-size:13px}
 `;
 
@@ -309,6 +310,17 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="notes" id="notes"></div>
   </section>
 
+  <section class="block" id="now-sec" hidden>
+    <div class="block-head">
+      <div>
+        <h2>اسپرینت جاری</h2>
+        <p class="lead">آنچه همین الان در اسپرینت در حال اجراست: چند استوری دارد، چندتا انجام شده و چندتا مانده، و ترتیب پیشنهادی ادامهٔ کار تا پایان همین اسپرینت. این بخش از خود اسپرینت Jira خوانده می‌شود و ربطی به پیشنهاد اسپرینت بعدی در پایین ندارد.</p>
+      </div>
+    </div>
+    <div id="sp-now"></div>
+    <div id="sp-order"></div>
+  </section>
+
   <section class="block" id="sprint-sec">
     <div class="block-head">
       <div>
@@ -317,8 +329,6 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
       </div>
       <div class="legend" id="legend-sp"></div>
     </div>
-    <div id="sp-now"></div>
-    <div id="sp-order"></div>
     <details class="own" id="sp-cfg-box" open>
       <summary>تنظیمات اسپرینت پیشنهادی</summary>
       <div class="own-body" id="sp-cfg"></div>

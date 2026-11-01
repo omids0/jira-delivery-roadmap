@@ -75,3 +75,14 @@ test('the page markup has no blocking external stylesheet (it must render withou
   assert.ok(!/<link[^>]+stylesheet/i.test(page()));
   assert.ok(!/<link[^>]+stylesheet/i.test(renderHome({ projects: [], user: '' })));
 });
+
+test('the running sprint is its own section, before and apart from the next-sprint proposal', () => {
+  const html = page();
+  const at = (s) => html.indexOf(s);
+  assert.ok(at('id="now-sec"') > 0 && at('id="now-sec"') < at('id="sp-now"') && at('id="sp-now"') < at('id="sp-order"'));
+  assert.ok(at('id="sp-order"') < at('id="sprint-sec"'));
+  assert.ok(at('id="sprint-sec"') < at('id="sp-cfg"') && at('id="sp-cfg"') < at('id="sp-next"')); // settings and proposal stay together under "next sprint"
+  const now = html.slice(at('id="now-sec"'), at('id="sprint-sec"'));
+  assert.ok(now.includes('اسپرینت جاری') && !now.includes('اسپرینت پیشنهادی بعدی'));
+  assert.ok(html.indexOf('اسپرینت پیشنهادی بعدی') > at('id="sprint-sec"'));
+});
