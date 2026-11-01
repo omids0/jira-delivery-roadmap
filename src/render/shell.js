@@ -14,6 +14,12 @@ main{max-width:960px;margin:0 auto;padding:28px 20px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:16px}
 .err{color:var(--crit)}
 .muted{color:var(--muted)}
+.ok{color:#0b8f80;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 18px}
+.fld{display:grid;gap:4px;font-size:13px}
+.fld input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink)}
+.actions{display:flex;align-items:center;gap:14px;margin-top:16px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:700;padding:6px 22px}
 `;
 
 const wrap = (body) => `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>نقشه راه تحویل Jira</title><style>${CSS}</style></head><body>${body}</body></html>`;
@@ -41,13 +47,31 @@ export function renderHome({ projects, user, error = '', fatal = false }) {
   </main>`);
 }
 
-export function renderProject({ projects, user, key, openStories, config }) {
+const field = (id, label, value, attrs = '') =>
+  `<label class="fld"><span>${label}</span><input id="${id}" value="${esc(value)}" ${attrs}></label>`;
+
+export function renderProject({ projects, user, key, openStories, settings, saved = false }) {
+  const num = 'type="number" min="1" max="20" inputmode="numeric"';
   return wrap(`${header({ projects, user, key })}<main>
     <div class="card">
       <h2 style="margin:0 0 6px">${esc(key)}</h2>
-      <p style="margin:0">اتصال به Jira برقرار است: <b>${openStories}</b> استوری باز.</p>
-      <p class="muted" style="margin:6px 0 0">موتور برنامه‌ریزی هنوز ساخته نشده؛ نقشه‌ی راه در docs/DESIGN.md است.</p>
+      <p style="margin:0"><b>${openStories}</b> استوری باز در این پروژه.</p>
     </div>
-    <details class="card"><summary>تنظیمات این پروژه (config/projects.json)</summary><pre dir="ltr">${esc(JSON.stringify(config, null, 2))}</pre></details>
+    <div class="card" id="jr-settings">
+      <h3 style="margin:0 0 4px">تنظیمات تیم</h3>
+      <p class="muted" style="margin:0 0 12px">این تنظیمات فقط در همین مرورگر و برای همین پروژه ذخیره می‌شود.</p>
+      <div class="grid">
+        ${field('jr-be', 'تعداد نفرات بک‌اند', settings.team.be, num)}
+        ${field('jr-fe', 'تعداد نفرات فرانت', settings.team.fe, num)}
+        ${field('jr-par', 'استوری هم‌زمان هر نفر', settings.parallelStories, 'type="number" min="1" max="10" inputmode="numeric"')}
+        ${field('jr-cbe', 'نام کامپوننت بک‌اند در Jira', settings.components.be, 'dir="ltr"')}
+        ${field('jr-cfe', 'نام کامپوننت فرانت در Jira', settings.components.fe, 'dir="ltr"')}
+      </div>
+      <div class="actions">
+        <button id="jr-confirm" type="button" class="primary">تأیید</button>
+        ${saved ? '<span class="ok" role="status">ذخیره شد ✓</span>' : ''}
+      </div>
+    </div>
+    <div class="card muted">نمایش نقشه‌ی راه (مسیر بحرانی و خط زمانی نفرات) به‌زودی اضافه می‌شود.</div>
   </main>`);
 }

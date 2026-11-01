@@ -1,5 +1,6 @@
 import { JiraError, getMyself, isValidProjectKey, jqlSearchAll, listProjects } from '../jiraClient.js';
 import { renderHome, renderProject, renderLoading } from '../render/shell.js';
+import { loadSettings, normalizeSettings, saveSettings, settingsKey } from '../settings.js';
 
 const LAST_PROJECT_KEY = 'jira-roadmap:last-project:';
 
@@ -20,7 +21,9 @@ const LAST_PROJECT_KEY = 'jira-roadmap:last-project:';
  */
 export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClose }) {
   const session = { baseUrl, token: null, meta: {}, cache: {} };
-  const lastKey = LAST_PROJECT_KEY + new URL(baseUrl).host;
+  const host = new URL(baseUrl).host;
+  const lastKey = LAST_PROJECT_KEY + host;
+  let openStories = 0;
   let projects = [];
   let user = '';
   let current = null;
@@ -38,11 +41,30 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
       if (e.target?.id === 'jr-project') openProject(e.target.value);
     });
     doc.addEventListener('click', (e) => {
-      const hit = e.target?.closest?.('#jr-refresh, #jr-close');
+      const hit = e.target?.closest?.('#jr-refresh, #jr-close, #jr-confirm');
       if (hit?.id === 'jr-refresh') openProject(current);
       else if (hit?.id === 'jr-close') onClose();
+      else if (hit?.id === 'jr-confirm') confirmSettings();
     });
   };
+
+  const settingsOf = (key) => loadSettings(storage, settingsKey(host, key), projectConfig(key));
+
+  const showProject = (saved = false) =>
+    paint(renderProject({ projects, user, key: current, openStories, settings: settingsOf(current), saved }));
+
+  function confirmSettings() {
+    const doc = frame.document;
+    if (!doc || !current) return;
+    const val = (id) => doc.getElementById(id)?.value;
+    const next = normalizeSettings({
+      team: { be: val('jr-be'), fe: val('jr-fe') },
+      parallelStories: val('jr-par'),
+      components: { be: val('jr-cbe'), fe: val('jr-cfe') }
+    }, projectConfig(current));
+    saveSettings(storage, settingsKey(host, current), next);
+    showProject(true);
+  }
 
   function describe(err) {
     if (err instanceof JiraError && err.status === 404) return 'این صفحه متعلق به Jira نیست. بوکمارک را وقتی اجرا کنید که در خود Jira هستید.';
@@ -60,7 +82,8 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
     try {
       const open = await jqlSearchAll(session, `project = ${key} AND issuetype = Story AND statusCategory != Done`, ['summary']);
       if (mine !== seq) return;
-      paint(renderProject({ projects, user, key, openStories: open.length, config: projectConfig(key) }));
+      openStories = open.length;
+      showProject();
     } catch (err) {
       if (mine !== seq) return;
       console.error('[jira-roadmap]', err);

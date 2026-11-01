@@ -13,7 +13,28 @@ test('project names are escaped in the selector', () => {
 });
 
 test('selected project is marked and story count shown', () => {
-  const html = renderProject({ projects: [{ key: 'ABC', name: 'Abc' }], user: '', key: 'ABC', openStories: 7, config: {} });
+  const html = renderProject({ projects: [{ key: 'ABC', name: 'Abc' }], user: '', key: 'ABC', openStories: 7, settings });
   assert.match(html, /<option value="ABC" selected>/);
   assert.match(html, /<b>7<\/b>/);
+});
+
+const settings = { team: { be: 2, fe: 3 }, parallelStories: 4, components: { be: 'API', fe: '"><b>x' } };
+
+test('settings form shows saved values, escapes them, and has a confirm button', () => {
+  const html = renderProject({ projects: [], user: '', key: 'ABC', openStories: 0, settings });
+  assert.match(html, /id="jr-be" value="2"/);
+  assert.match(html, /id="jr-cfe" value="&quot;&gt;&lt;b&gt;x"/);
+  assert.match(html, /id="jr-confirm"/);
+  assert.ok(!html.includes('ذخیره شد'));
+});
+
+test('saved flag shows the confirmation', () => {
+  const html = renderProject({ projects: [], user: '', key: 'ABC', openStories: 0, settings, saved: true });
+  assert.ok(html.includes('ذخیره شد'));
+});
+
+test('no developer text or raw JSON in the user view', () => {
+  const html = renderProject({ projects: [], user: '', key: 'ABC', openStories: 0, settings });
+  assert.ok(!html.includes('DESIGN.md'));
+  assert.ok(!html.includes('projects.json'));
 });
