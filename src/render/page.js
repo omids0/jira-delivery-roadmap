@@ -33,6 +33,21 @@ details.person>summary::before{content:"◂";color:var(--muted);font-size:12px}
 details.person[open]>summary::before{content:"▾"}
 details.person[open]>summary{border-bottom:1px solid var(--line)}
 details.person>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ord{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:grid;gap:12px;margin-bottom:16px}
+.ord h3{margin:0;font-size:16px}
+.ord-stats{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:12.5px;color:var(--fg2)}
+.ord-stats b{color:var(--fg)}
+.ord-person{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ord-person>header{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 12px;background:var(--sunk);font-size:12.5px;color:var(--fg2)}
+.ord-person>header .nm{font-weight:800;font-size:13.5px;color:var(--fg);display:inline-flex;align-items:center;gap:7px}
+.ord-lane{position:relative;height:30px;margin:6px 12px 0;background:repeating-linear-gradient(to left,var(--grid) 0 1px,transparent 1px 8.3333%);border-radius:4px}
+.ord-blk{position:absolute;top:3px;height:24px;border-radius:4px;border:1px solid var(--c);background:color-mix(in oklab,var(--c) 28%,var(--surface));border-inline-start:4px solid var(--c);font-size:10.5px;line-height:22px;padding-inline:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:var(--f-mono)}
+.ord-blk.over{border-style:dashed;opacity:.75}
+.ord-blk.crit{box-shadow:0 0 0 2px var(--fg)}
+.ord-end{position:absolute;top:-4px;bottom:-4px;border-inline-start:2px dashed var(--crit);z-index:2;pointer-events:none}
+.ord-end span{position:absolute;top:-14px;inset-inline-start:4px;font-size:10px;color:var(--crit);white-space:nowrap}
+.ord-list{margin:8px 0 10px;padding-inline-start:30px;display:grid;gap:4px;font-size:12.5px}
+.ord-list .m2{color:var(--muted);font-size:11.5px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .q-notes{margin:6px 0 0;padding-inline-start:20px;color:var(--fg2);font-size:13px}
 `;
 
@@ -275,6 +290,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
       <div class="legend" id="legend-sp"></div>
     </div>
     <div id="sp-now"></div>
+    <div id="sp-order"></div>
     <details class="own" id="sp-cfg-box" open>
       <summary>تنظیمات اسپرینت پیشنهادی</summary>
       <div class="own-body" id="sp-cfg"></div>

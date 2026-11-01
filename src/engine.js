@@ -364,6 +364,57 @@ export function createEngine(ctx) {
     return plan({ ...state, be: o.be ?? state.be, fe: o.fe ?? state.fe, reserve: o.reserve || 0 });
   }
 
+  /**
+   * Order of work until the end of the running sprint: only the remaining work of the sprint's stories,
+   * planned for the same team (names, paces, parallel stories) and the same epic owners as the main plan.
+   * A story that waits on an open story outside the sprint (or in another project) cannot be sequenced
+   * and is reported in `blocked`. Stories already in progress go first.
+   * @param {string[]} keys   keys of the sprint's stories
+   * @param {number} daysLeft workdays left in the sprint after today
+   */
+  function planSprintNow(state, P, keys, daysLeft) {
+    const all = stories({ ...state, p2: true, p3: true, def: true }); // a story in the sprint is planned whatever its phase
+    const byKey = Object.fromEntries(all.map((s) => [s.k, s]));
+    const inSet = new Set(keys);
+    const list = [];
+    const blocked = [];
+    for (const k of keys) {
+      const s = byKey[k];
+      if (!s || s.done || s.rc) continue;
+      const outside = s.deps.filter((d) => !inSet.has(d) && byKey[d] && !byKey[d].done);
+      const ext = ctx.DEP_INFO?.[k]?.x || [];
+      if (outside.length || ext.length) {
+        blocked.push({ s, outside, ext });
+        continue;
+      }
+      s.deps = s.deps.filter((d) => inSet.has(d));
+      if (s.f.includes('ip')) s.rank = -1; // already started: finish it first
+      list.push(s);
+    }
+    // the same people own the same epics as in the main plan (manual choices included)
+    const manual = { BE: {}, FE: {} };
+    for (const r of ['BE', 'FE']) {
+      for (const [code, idx] of Object.entries(P.owners.own[r])) {
+        const key = (EP[code] || {}).k;
+        if (key) manual[r][key] = idx;
+      }
+    }
+    const paces = devPaces(state);
+    const pars = devPars(state);
+    const owners = resolveOwners(list, state.be, state.fe, manual, paces);
+    const base = PACE[state.pace] || PACE.avg;
+    const paceOf = (r, ep) => paces[r][owners.own[r][ep]] ?? base[r];
+    const parOf = (r, ep) => pars[r][owners.own[r][ep]] ?? Math.max(1, state.par || 1);
+    const tasks = buildTasks(list, paceOf, parOf, 0, sprintOpts(state));
+    const sched = schedule(tasks, state.be, state.fe, 0, pars, owners);
+    const span = Math.max(0, ...[...sched.values()].map((v) => v.e));
+    const todayIsWorkday = cal.WD[0].getTime() === cal.START.getTime();
+    return {
+      list, tasks, sched, span, off: 0, owners, paces, pars, blocked,
+      horizon: Math.max(0, daysLeft) + (todayIsWorkday ? 1 : 0), crit: criticalChain(sched)
+    };
+  }
+
   function epicFinish(P) {
     const out = {};
     P.sched.forEach((v) => {
@@ -431,5 +482,22 @@ export function createEngine(ctx) {
     return { sprints: out, sprintOf };
   }
 
-  return { cal, PACE, STORY_PACE, devPaces, devPars, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
+  return { cal, PACE, STORY_PACE, devPaces, devPars, planSprintNow, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
+}
+
+/** Overlaps that must never happen in a schedule: [{ kind: 'slot' | 'epic', a, b }] (empty = clean). */
+export function findOverlaps(P) {
+  const items = [...P.sched.values()];
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i];
+      const b = items[j];
+      if (a.t.role !== b.t.role || a.lane !== b.lane) continue;
+      if (!(a.s < b.e - 1e-9 && b.s < a.e - 1e-9)) continue;
+      if (a.slot === b.slot) out.push({ kind: 'slot', a: a.t.id, b: b.t.id });
+      else if (a.t.s.ep === b.t.s.ep) out.push({ kind: 'epic', a: a.t.id, b: b.t.id });
+    }
+  }
+  return out;
 }

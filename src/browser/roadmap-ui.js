@@ -13,6 +13,7 @@ import { renderOwners } from '../render/owners.js';
 import { renderPeople } from '../render/people.js';
 import { renderRaw } from '../render/raw.js';
 import { renderCurrentSprint } from '../render/sprintNow.js';
+import { renderSprintOrder } from '../render/sprintOrder.js';
 import { renderSprints } from '../render/sprints.js';
 import { renderSprintSettings } from '../render/sprintSettings.js';
 import { renderTeam } from '../render/team.js';
@@ -82,6 +83,8 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     const PS = eng.planForSprint(state);
     const sp = renderSprints(R, PS, PS === P ? crit : eng.criticalChain(PS.sched));
     html('sp-now', renderCurrentSprint(R));
+    const cur = ctx.CURRENT_SPRINT;
+    html('sp-order', cur ? renderSprintOrder(R, eng.planSprintNow(state, P, cur.epics.flatMap((g) => g.items.filter((x) => x.cat !== 'done').map((x) => x.k)), cur.days.left)) : '');
     html('sp-next', sp.next);
     html('sp-matrix', sp.matrix);
     html('legend-sp', sp.legend);
