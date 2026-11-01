@@ -32,6 +32,22 @@ export async function fetchSprints(session, key) {
   return [...seen.values()];
 }
 
+/** All issues of one sprint (every type, including sub-tasks). Empty on any failure. */
+export async function fetchSprintIssues(session, sprintId, fields) {
+  const out = [];
+  try {
+    for (let startAt = 0; startAt < 3000;) {
+      const page = await jiraGet(session, `/rest/agile/1.0/sprint/${sprintId}/issue?startAt=${startAt}&maxResults=100&fields=${fields.join(',')}`);
+      out.push(...(page.issues || []));
+      startAt += (page.issues || []).length;
+      if (!(page.issues || []).length || startAt >= page.total) break;
+    }
+  } catch {
+    return [];
+  }
+  return out;
+}
+
 const trailingNumber = (name) => {
   const m = /(\d+)\s*$/.exec(name || '');
   return m ? Number(m[1]) : null;

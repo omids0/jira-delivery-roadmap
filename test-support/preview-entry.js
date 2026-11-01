@@ -41,6 +41,15 @@ const raw = {
     { id: 4, name: 'Sprint 9', state: 'active', startDate: day(14), endDate: day(-1) }
   ]
 };
+// the running sprint holds stories 9..22 and their sub-tasks
+const inSprint = (key) => { const n = Number(key.split('-')[1]); return n >= 9 && n <= 22; };
+raw.activeSprint = {
+  sprint: raw.sprints[3],
+  issues: [
+    ...stories.filter((s) => inSprint(s.key)).map((s) => ({ ...s, fields: { ...s.fields, issuetype: { name: 'Story' }, assignee: { displayName: people.be[Number(s.key.split('-')[1]) % 2] } } })),
+    ...subtasks.filter((t) => inSprint(t.fields.parent.key)).map((t) => ({ ...t, fields: { ...t.fields, issuetype: { name: 'Sub-task', subtask: true } } }))
+  ]
+};
 const cfg = { components: { be: 'Back-End', fe: 'Front-End' }, labels: {}, weekend: [4, 5], locale: 'fa-IR-u-ca-persian', team: { be: 2, fe: 1 }, parallelStories: 3 };
 const model = buildModel(raw, cfg);
 const ctx = buildContext({ raw, model, sprints: raw.sprints, assigned: raw.assigned, cfg, baseUrl: 'https://jira.example', project: 'PRJ', now: new Date(2026, 9, 20, 12) });

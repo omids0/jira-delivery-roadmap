@@ -1,7 +1,7 @@
 // Reads the raw issues of one project from Jira. Network only; shaping the
 // result is src/model.js.
 import { getEpicLinkField, jqlQuote, jqlSearchAll } from './jiraClient.js';
-import { fetchSprints } from './sprints.js';
+import { fetchSprintIssues, fetchSprints } from './sprints.js';
 
 /**
  * @param {object} session  { baseUrl, token, meta }
@@ -22,7 +22,12 @@ export async function fetchProject(session, key, cfg, onProgress = () => {}) {
     fetchAssigned(session, key, epicField),
     fetchSprints(session, key)
   ]);
-  return { epics, stories, subtasks, epicField, assigned, sprints };
+  // what the running sprint holds, straight from Jira
+  const active = sprints.find((s) => s.state === 'active');
+  const activeSprint = active
+    ? { sprint: active, issues: await fetchSprintIssues(session, active.id, ['summary', 'status', 'issuetype', 'assignee', 'labels', 'components', 'parent', ...(epicField ? [epicField] : [])]) }
+    : null;
+  return { epics, stories, subtasks, epicField, assigned, sprints, activeSprint };
 }
 
 /** Open work items that have an assignee (tasks, bugs, stories, sub-tasks), for the per-person view. */

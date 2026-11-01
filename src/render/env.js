@@ -21,7 +21,7 @@ export function createEnv(ctx, eng, state) {
     EP_BY_KEY: Object.fromEntries(Object.entries(ctx.EP).filter(([, e]) => e.k).map(([c, e]) => [e.k, c])),
     PACE: eng.PACE, STORY_PACE: eng.STORY_PACE,
     SPRINTS: ctx.SPRINTS, SPRINT_MARKS: ctx.SPRINT_MARKS, NEXT_SPRINT: ctx.NEXT_SPRINT,
-    DEP_INFO: ctx.DEP_INFO, ASSIGNED: ctx.ASSIGNED,
+    DEP_INFO: ctx.DEP_INFO, ASSIGNED: ctx.ASSIGNED, CURRENT_SPRINT: ctx.CURRENT_SPRINT || null,
     // team members: the ones the user named replace the auto-detected people of the same slot
     get PEOPLE() {
       const out = people.map((p) => ({ ...p }));

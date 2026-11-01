@@ -11,6 +11,7 @@ import { renderOverview } from '../render/overview.js';
 import { renderOwners } from '../render/owners.js';
 import { renderPeople } from '../render/people.js';
 import { renderRaw } from '../render/raw.js';
+import { renderCurrentSprint } from '../render/sprintNow.js';
 import { renderSprints } from '../render/sprints.js';
 import { renderTeam } from '../render/team.js';
 import { renderVelocity } from '../render/velocity.js';
@@ -75,6 +76,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     html('epic-tbl', renderEpics(R, P));
     html('notes', renderNotes(R, P));
     const sp = renderSprints(R, P, crit);
+    html('sp-now', renderCurrentSprint(R));
     html('sp-next', sp.next);
     html('sp-matrix', sp.matrix);
     html('legend-sp', sp.legend);
