@@ -1,8 +1,11 @@
-import { JiraError, getMyself, isValidProjectKey, jqlSearchAll, listProjects } from '../jiraClient.js';
+import { fetchProject } from '../collect.js';
+import { JiraError, getMyself, isValidProjectKey, listProjects } from '../jiraClient.js';
+import { buildModel, summarize } from '../model.js';
 import { renderHome, renderProject, renderLoading } from '../render/shell.js';
 import { loadSettings, normalizeSettings, saveSettings, settingsKey } from '../settings.js';
 
 const LAST_PROJECT_KEY = 'jira-roadmap:last-project:';
+const CACHE_MS = 60_000;
 
 /**
  * The roadmap running INSIDE a Jira page (via the bookmarklet). Same origin as
@@ -23,7 +26,7 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
   const session = { baseUrl, token: null, meta: {}, cache: {} };
   const host = new URL(baseUrl).host;
   const lastKey = LAST_PROJECT_KEY + host;
-  let openStories = 0;
+  let raw = null; // raw Jira issues of the current project; the model is rebuilt from it when settings change
   let projects = [];
   let user = '';
   let current = null;
@@ -42,7 +45,7 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
     });
     doc.addEventListener('click', (e) => {
       const hit = e.target?.closest?.('#jr-refresh, #jr-close, #jr-confirm');
-      if (hit?.id === 'jr-refresh') openProject(current);
+      if (hit?.id === 'jr-refresh') openProject(current, { refresh: true });
       else if (hit?.id === 'jr-close') onClose();
       else if (hit?.id === 'jr-confirm') confirmSettings();
     });
@@ -50,8 +53,11 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
 
   const settingsOf = (key) => loadSettings(storage, settingsKey(host, key), projectConfig(key));
 
-  const showProject = (saved = false) =>
-    paint(renderProject({ projects, user, key: current, openStories, settings: settingsOf(current), saved }));
+  const showProject = (saved = false) => {
+    const settings = settingsOf(current);
+    const summary = summarize(buildModel(raw, { ...projectConfig(current), ...settings }));
+    paint(renderProject({ projects, user, key: current, summary, settings, saved }));
+  };
 
   function confirmSettings() {
     const doc = frame.document;
@@ -73,16 +79,21 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
     return err.message;
   }
 
-  async function openProject(key) {
+  async function openProject(key, { refresh = false } = {}) {
     if (!isValidProjectKey(key)) return paint(renderHome({ projects, user, error: 'کلید پروژه معتبر نیست' }));
     const mine = ++seq;
     current = key;
     storage.setItem(lastKey, key);
-    paint(renderLoading(`در حال دریافت اطلاعات پروژه‌ی ${key} از Jira…`));
     try {
-      const open = await jqlSearchAll(session, `project = ${key} AND issuetype = Story AND statusCategory != Done`, ['summary']);
+      const cached = session.cache[key];
+      if (!refresh && cached && Date.now() - cached.at < CACHE_MS) raw = cached.raw;
+      else {
+        paint(renderLoading(`در حال دریافت اطلاعات پروژه‌ی ${key} از Jira…`));
+        const fetched = await fetchProject(session, key, { ...projectConfig(key), ...settingsOf(key) }, (t) => mine === seq && paint(renderLoading(t)));
+        session.cache[key] = { at: Date.now(), raw: fetched };
+        raw = fetched;
+      }
       if (mine !== seq) return;
-      openStories = open.length;
       showProject();
     } catch (err) {
       if (mine !== seq) return;

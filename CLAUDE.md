@@ -7,7 +7,7 @@ Persian-language (RTL) bookmarklet app: delivery roadmap for any Jira Data Cente
 - `README.md`: user-facing install + config docs.
 
 ## State
-Scaffold only: bookmarklet → overlay → project select → open-story count. Planning engine (data model, velocity, scheduler, critical path, renderers) is NOT written yet.
+Done: bookmarklet → overlay → project select → team settings form (localStorage) → data model (`src/collect.js` fetch, `src/model.js` pure normalize + `summarize`) → overview with epic table and data-quality notes. NOT written yet: velocity from sprints, scheduler/critical path, timeline/flow/sprint renderers.
 
 ## Rules
 - **Public repo, public GitHub Pages. Never commit company data** (project keys, epic/story titles, people names, Jira URLs). `reference/` is gitignored and holds a local-only company artifact (`reference/original-artifact.html`) used as the behavioral spec; read it, never copy its data into tracked files.

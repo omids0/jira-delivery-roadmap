@@ -1,6 +1,9 @@
 {
   "defaults": {
     "components": { "be": "Back-End", "fe": "Front-End" },
+    "labels": { "be": ["backend"], "fe": ["frontend"] },
+    "issueTypes": { "story": ["Story"] },
+    "blockLinkPattern": "block",
     "weekend": [4, 5],
     "locale": "fa-IR-u-ca-persian",
     "team": { "be": 1, "fe": 1 },
