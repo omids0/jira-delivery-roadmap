@@ -15,11 +15,12 @@ export function renderTeam(R) {
         <span class="dev-n">${fa(i + 1, 0)}</span>
         <input class="dev-name" data-r="${r}" data-i="${i}" list="jr-people" value="${esc(d.name || '')}" placeholder="${esc(personName(r, i))}" aria-label="نام نفر ${fa(i + 1, 0)} ${roleName(r)}" autocomplete="off">
         <label class="dev-pace"><input class="dev-pace-in" data-r="${r}" data-i="${i}" type="number" min="0.5" max="200" step="0.5" inputmode="decimal" value="${d.pace ?? ''}" placeholder="${fa(scenario[r], 1)}" aria-label="سرعت روزانه نفر ${fa(i + 1, 0)} ${roleName(r)}"> <span>sub-task در روز</span></label>
+        <label class="dev-par"><input class="dev-par-in" data-r="${r}" data-i="${i}" type="number" min="1" max="6" step="1" inputmode="numeric" value="${d.par ?? ''}" placeholder="${fa(state.par, 0)}" aria-label="استوری هم‌زمان نفر ${fa(i + 1, 0)} ${roleName(r)}"> <span>استوری هم‌زمان</span></label>
       </div>`;
     }).join('');
     return `<div class="team-col"><h3><span class="role-dot ${r.toLowerCase()}" aria-hidden="true"></span>نفرات ${roleName(r)}</h3>${rows}</div>`;
   };
-  return `<p class="lead" style="font-size:13px">برای هر نفر نام را از افراد Jira انتخاب کنید و بنویسید روزی چند sub-task می‌بندد. خالی بماند، سرعت سناریوی انتخاب‌شده (بک‌اند ${fa(scenario.BE, 1)}، فرانت ${fa(scenario.FE, 1)} در روز) برای او حساب می‌شود. نام انتخابی کارهای باز او در Jira را هم به همین نفر وصل می‌کند.</p>
+  return `<p class="lead" style="font-size:13px">برای هر نفر نام را از افراد Jira انتخاب کنید و بنویسید روزی چند sub-task می‌بندد و چند استوری را هم‌زمان جلو می‌برد. خالی بماند، سرعت سناریوی انتخاب‌شده (بک‌اند ${fa(scenario.BE, 1)}، فرانت ${fa(scenario.FE, 1)} در روز) و ${fa(state.par, 0)} استوری هم‌زمان برای او حساب می‌شود. نام انتخابی کارهای باز او در Jira را هم به همین نفر وصل می‌کند.</p>
   <div class="team-grid">${column('BE')}${column('FE')}</div>
   <datalist id="jr-people">${(ctx.assignees || []).map((n) => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
 }

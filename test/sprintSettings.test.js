@@ -14,11 +14,11 @@ const setup = (sprint = {}, over = {}) => {
 };
 
 test('normSprint: valid values kept, out-of-range or junk becomes null, reserve defaults to 0', () => {
-  assert.deepEqual(normSprint({ start: '2026-11-05', len: '12', n: 7, target: '30', be: 3, fe: 2, par: 2, reserve: '20' }),
-    { start: '2026-11-05', len: 12, n: 7, target: 30, be: 3, fe: 2, par: 2, reserve: 20 });
-  assert.deepEqual(normSprint({ start: '5/11/2026', len: 0, n: 'x', target: 9999, be: 9, fe: -1, par: null, reserve: 95 }),
-    { start: null, len: null, n: null, target: null, be: null, fe: null, par: null, reserve: 0 });
-  assert.deepEqual(normSprint(undefined), { start: null, len: null, n: null, target: null, be: null, fe: null, par: null, reserve: 0 });
+  assert.deepEqual(normSprint({ start: '2026-11-05', len: '12', n: 7, target: '30', be: 3, fe: 2, reserve: '20' }),
+    { start: '2026-11-05', len: 12, n: 7, target: 30, be: 3, fe: 2, reserve: 20 });
+  assert.deepEqual(normSprint({ start: '5/11/2026', len: 0, n: 'x', target: 9999, be: 9, fe: -1, reserve: 95 }),
+    { start: null, len: null, n: null, target: null, be: null, fe: null, reserve: 0 });
+  assert.deepEqual(normSprint(undefined), { start: null, len: null, n: null, target: null, be: null, fe: null, reserve: 0 });
 });
 
 test('state from an older version gets an empty sprint block', () => {
@@ -61,7 +61,7 @@ test('sprint headcount and reserve change the sprint capacity; no override keeps
 test('settings form: all fields, defaults as placeholders, values escaped, reset button', () => {
   const { R } = setup({ n: 7, start: '2026-12-01' });
   const html = renderSprintSettings(R);
-  for (const k of ['start', 'len', 'n', 'target', 'be', 'fe', 'par', 'reserve']) assert.ok(html.includes(`data-k="${k}"`), k);
+  for (const k of ['start', 'len', 'n', 'target', 'be', 'fe', 'reserve']) assert.ok(html.includes(`data-k="${k}"`), k);
   assert.ok(html.includes('value="7"') && html.includes('value="2026-12-01"'));
   assert.ok(html.includes('id="sp-reset"'));
   assert.ok(!/undefined|NaN/.test(html));

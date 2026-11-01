@@ -63,7 +63,8 @@ export function renderWhatIf(R, P, crit) {
   const util = (r) => {
     const n = r === 'BE' ? state.be : state.fe;
     const d = r === 'BE' ? m.beDays : m.feDays;
-    return Math.round((100 * d) / (Math.max(1, n) * state.par *Math.max(0.1, P.span - P.off)));
+    const slots = (P.pars?.[r] || Array(Math.max(1, n)).fill(state.par)).reduce((a, b) => a + b, 0); // stories the people can run at once
+    return Math.round((100 * d) / (Math.max(1, slots) * Math.max(0.1, P.span - P.off)));
   };
   return `
       <span>اگر یک نفر بک‌اند اضافه شود: <b>${gain(pBE) > 0.2 ? fa(gain(pBE)) + ' روز زودتر' : 'بدون تغییر'}</b></span>

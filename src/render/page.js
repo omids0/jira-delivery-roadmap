@@ -26,6 +26,7 @@ const EXTRA_CSS = `
 .dev-name{flex:1 1 150px;min-width:0}
 .dev-pace{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg2)}
 .dev-pace-in{width:76px}
+.dev-par-in{width:56px}
 details.person>summary{cursor:pointer;list-style:none;border-bottom:0}
 details.person>summary::-webkit-details-marker{display:none}
 details.person>summary::before{content:"◂";color:var(--muted);font-size:12px}
@@ -136,7 +137,6 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
   <div class="controls" role="group" aria-label="تنظیم تیم">
     ${stepper('be', 'بک‌اند', 'be', state.be)}
     ${stepper('fe', 'فرانت', 'fe', state.fe)}
-    ${stepper('par', 'استوری همزمان هر نفر', '', state.par)}
     <span class="sep" aria-hidden="true"></span>
     <div class="seg" role="radiogroup" aria-label="سناریوی سرعت">
       ${pace('avg', 'میانگین اسپرینت‌های قبل')}${pace('opt', 'خوش‌بینانه')}${pace('pes', 'محتاطانه')}
@@ -168,6 +168,16 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
 
   <div class="kpis" id="kpis"></div>
   <div class="whatif" id="whatif"></div>
+
+  <section class="block" id="fe-sec">
+    <div class="block-head">
+      <div>
+        <h2>نوبت فرانت</h2>
+        <p class="lead">استوری‌هایی که کار بک‌اندشان تمام شده (یا بیش از نصفش، که طبق روش قرارداد-اول فرانت می‌تواند از روی قرارداد API شروع کند) ولی sub-taskهای فرانتشان هنوز باز است. فرانت از همین فهرست کار برمی‌دارد.</p>
+      </div>
+    </div>
+    <div id="fe-ready"></div>
+  </section>
 
   <section class="block" id="overview">
     <div class="block-head">

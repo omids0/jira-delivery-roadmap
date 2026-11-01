@@ -106,7 +106,16 @@ export function createEngine(ctx) {
     return { BE: of('BE', state.be), FE: of('FE', state.fe) };
   }
 
-  function buildTasks(list, paceOf, off, par, NEXT) {
+  /** stories a developer runs at once: their own figure, else the default (state.par) */
+  function devPars(state) {
+    const of = (r, n) => Array.from({ length: n }, (_, i) => {
+      const p = Number.parseInt(state.devs?.[r]?.[i]?.par, 10);
+      return Number.isFinite(p) && p >= 1 ? Math.min(6, p) : Math.max(1, state.par || 1);
+    });
+    return { BE: of('BE', state.be), FE: of('FE', state.fe) };
+  }
+
+  function buildTasks(list, paceOf, parOf, off, NEXT) {
     const tasks = [];
     const tk = {};
     const holdLow = ctx.priority?.holdLow && NEXT ? wdIndex(parseDay(NEXT.start)) + (NEXT.firstLen || NEXT.len || 10) : 0;
@@ -115,7 +124,7 @@ export function createEngine(ctx) {
         const subs = r === 'BE' ? s.sbe : s.sfe;
         if (subs > 0) {
           const t = {
-            id: s.k + ':' + r, role: r, subs, dur: Math.round((100 * subs * par) / paceOf(r, s.ep)) / 100, s, preds: [], succ: [],
+            id: s.k + ':' + r, role: r, subs, dur: Math.round((100 * subs * parOf(r, s.ep)) / paceOf(r, s.ep)) / 100, s, preds: [], succ: [],
             release: Math.max(off + (s.f.includes('d') ? GATE : 0), s.rank === 2 ? holdLow : 0)
           };
           tasks.push(t);
@@ -210,10 +219,10 @@ export function createEngine(ctx) {
 
   // Each developer runs up to `par` stories at once (one slot each), never two from the same epic at the same time.
   // A dev's measured daily output is shared across their slots, so each story runs `par` times longer in wall-clock.
-  function schedule(tasks, nBE, nFE, off, par, owners) {
+  function schedule(tasks, nBE, nFE, off, pars, owners) {
     const devs = { BE: [], FE: [] };
     [['BE', nBE], ['FE', nFE]].forEach(([r, n]) => {
-      for (let i = 0; i < n; i++) devs[r].push({ slots: Array(par).fill(off), placed: [] });
+      for (let i = 0; i < n; i++) devs[r].push({ slots: Array(pars?.[r]?.[i] ?? 1).fill(off), placed: [] });
     });
     const sched = new Map();
     const left = new Set(tasks);
@@ -336,22 +345,23 @@ export function createEngine(ctx) {
   function plan(state) {
     const off = 0;
     const list = stories(state);
-    const par = Math.max(1, state.par || 1);
     const paces = devPaces(state);
+    const pars = devPars(state);
     const owners = resolveOwners(list, state.be, state.fe, state.own, paces);
     const base = PACE[state.pace] || PACE.avg;
     const paceOf = (r, ep) => paces[r][owners.own[r][ep]] ?? base[r];
-    const tasks = buildTasks(list, paceOf, off, par, sprintOpts(state));
-    const sched = schedule(tasks, state.be, state.fe, off, par, owners);
+    const parOf = (r, ep) => pars[r][owners.own[r][ep]] ?? Math.max(1, state.par || 1);
+    const tasks = buildTasks(list, paceOf, parOf, off, sprintOpts(state));
+    const sched = schedule(tasks, state.be, state.fe, off, pars, owners);
     const span = Math.max(off, ...[...sched.values()].map((v) => v.e));
-    return { list, tasks, sched, span, off, owners, paces };
+    return { list, tasks, sched, span, off, owners, paces, pars };
   }
 
-  /** The plan the sprint proposal is built from: the main plan, unless the sprint has its own team size, parallelism or reserve. */
+  /** The plan the sprint proposal is built from: the main plan, unless the sprint has its own team size or reserve. */
   function planForSprint(state) {
     const o = state.sprint || {};
-    if (o.be == null && o.fe == null && o.par == null && !o.reserve) return plan(state);
-    return plan({ ...state, be: o.be ?? state.be, fe: o.fe ?? state.fe, par: o.par ?? state.par, reserve: o.reserve || 0 });
+    if (o.be == null && o.fe == null && !o.reserve) return plan(state);
+    return plan({ ...state, be: o.be ?? state.be, fe: o.fe ?? state.fe, reserve: o.reserve || 0 });
   }
 
   function epicFinish(P) {
@@ -421,5 +431,5 @@ export function createEngine(ctx) {
     return { sprints: out, sprintOf };
   }
 
-  return { cal, PACE, STORY_PACE, devPaces, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
+  return { cal, PACE, STORY_PACE, devPaces, devPars, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
 }

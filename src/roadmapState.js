@@ -29,11 +29,11 @@ export function normSprint(s) {
   const start = typeof s?.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.start) && !Number.isNaN(Date.parse(s.start)) ? s.start : null;
   return {
     start, len: intIn(s?.len, 1, 30), n: intIn(s?.n, 1, 9999), target: intIn(s?.target, 1, 500),
-    be: intIn(s?.be, 1, 6), fe: intIn(s?.fe, 1, 6), par: intIn(s?.par, 1, 6), reserve: intIn(s?.reserve, 0, 80) || 0
+    be: intIn(s?.be, 1, 6), fe: intIn(s?.fe, 1, 6), reserve: intIn(s?.reserve, 0, 80) || 0
   };
 }
 
-/** Per-person settings: { BE: [{ name, pace }], FE: [...] }; name = chosen team member, pace = sub-tasks per workday (null: use the scenario pace). */
+/** Per-person settings: { BE: [{ name, pace, par }], FE: [...] }; name = chosen team member, pace = sub-tasks per workday (null: scenario pace), par = stories at once (null: default). */
 export function normDevs(d) {
   const out = { BE: [], FE: [] };
   for (const r of ['BE', 'FE']) {
@@ -41,6 +41,7 @@ export function normDevs(d) {
     out[r] = list.map((x) => {
       const pace = Number(x?.pace);
       return {
+        par: intIn(x?.par, 1, 6),
         name: typeof x?.name === 'string' && x.name.trim() ? x.name.trim().slice(0, 60) : null,
         pace: x?.pace != null && Number.isFinite(pace) && pace >= 0.5 && pace <= 200 ? Math.round(pace * 10) / 10 : null
       };

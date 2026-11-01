@@ -66,7 +66,7 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
     stories.push({
       k: s.key, ep: s.epic ? codeOf[s.epic] : 'oth', title: cleanTitle(s.title),
       be: feOnly ? 0 : est.be, fe: wantsFe ? est.fe : 0,
-      deps: s.blockedBy.slice(), f, known,
+      deps: s.blockedBy.slice(), f, known, subs: s.subtasks,
       done: s.done, res: isoDay(s.resolved),
       hist: s.done && (!resolvedAt || today - resolvedAt > recentMs)
     });

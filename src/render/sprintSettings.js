@@ -21,7 +21,6 @@ export function renderSprintSettings(R) {
     ${num('target', 'تعداد استوری هدف', o.target, 'همه‌ی استوری‌های قابل‌اجرا', 1, 500)}
     ${num('be', 'نفرات بک‌اند', o.be, state.be, 1, 6)}
     ${num('fe', 'نفرات فرانت', o.fe, state.fe, 1, 6)}
-    ${num('par', 'استوری هم‌زمان هر نفر', o.par, state.par, 1, 6)}
     ${num('reserve', 'ذخیره برای باگ و کار دیگر (٪)', o.reserve || '', '۰', 0, 80)}
   </div>
   <div><button type="button" class="btn ghost" id="sp-reset">بازنشانی به پیش‌فرض</button>

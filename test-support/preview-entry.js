@@ -6,7 +6,7 @@ import { buildModel, summarize } from '../src/model.js';
 import { qualityNotes } from '../src/quality.js';
 import { createEnv } from '../src/render/env.js';
 import { addFont, renderPage } from '../src/render/page.js';
-import { defaultState } from '../src/roadmapState.js';
+import { loadState, saveState } from '../src/roadmapState.js';
 import { mountRoadmap } from '../src/browser/roadmap-ui.js';
 
 let seed = 7;
@@ -54,11 +54,13 @@ const cfg = { components: { be: 'Back-End', fe: 'Front-End' }, labels: {}, weeke
 const model = buildModel(raw, cfg);
 const ctx = buildContext({ raw, model, sprints: raw.sprints, assigned: raw.assigned, cfg, baseUrl: 'https://jira.example', project: 'PRJ', now: new Date(2026, 9, 20, 12) });
 const eng = createEngine(ctx);
-const state = defaultState(cfg);
+// same storage path the real app uses, so a reload shows whether the choices survive
+const STATE_KEY = 'jira-roadmap:state:preview:PRJ';
+const state = loadState(window.localStorage, STATE_KEY, cfg);
 const settings = { team: cfg.team, parallelStories: 3, components: cfg.components };
 const R = createEnv(ctx, eng, state);
 document.open();
 document.write(renderPage(R, { projects: [{ key: 'PRJ', name: 'Preview project' }], user: 'Preview', key: 'PRJ', projectName: 'Preview project', settings, notes: qualityNotes(summarize(model)) }));
 document.close();
 addFont(document);
-window.__view = mountRoadmap({ doc: document, ctx, eng, state, persist() {}, onRefresh() {} });
+window.__view = mountRoadmap({ doc: document, ctx, eng, state, persist: () => saveState(window.localStorage, STATE_KEY, state), onRefresh() {} });

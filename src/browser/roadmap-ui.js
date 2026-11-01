@@ -3,6 +3,7 @@
 // sections in place by id, so the scroll position and open panels survive.
 import { createEnv } from '../render/env.js';
 import { renderEpics } from '../render/epics.js';
+import { renderFeReady } from '../render/feReady.js';
 import { renderFlow } from '../render/flow.js';
 import { renderGantt } from '../render/gantt.js';
 import { computeSummary, legendHTML, renderKpis, renderWhatIf } from '../render/kpis.js';
@@ -53,6 +54,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
 
     html('kpis', renderKpis(R, P, crit));
     html('whatif', renderWhatIf(R, P, crit));
+    html('fe-ready', renderFeReady(R, P));
     const ov = renderOverview(R, P);
     html('ov-progress', ov.progress);
     html('ov', ov.map);
@@ -113,7 +115,6 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
   function syncControls() {
     text('be-n', R.fa(state.be, 0));
     text('fe-n', R.fa(state.fe, 0));
-    text('par-n', R.fa(state.par, 0));
   }
 
   // the team panel is rebuilt only when its row count or placeholder pace changes, never while someone types in it
@@ -139,7 +140,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
   doc.addEventListener('click', (e) => {
     const t = e.target?.closest?.('button');
     if (!t) return;
-    const m = /^(be|fe|par)-(inc|dec)$/.exec(t.id || '');
+    const m = /^(be|fe)-(inc|dec)$/.exec(t.id || '');
     if (m) {
       state[m[1]] = clamp(state[m[1]] + (m[2] === 'inc' ? 1 : -1));
       change();
@@ -161,14 +162,16 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     } else if (el?.classList?.contains('sp-in')) {
       state.sprint = normSprint({ ...state.sprint, [el.dataset.k]: el.value === '' ? null : el.value });
       change(false);
-    } else if (el?.classList?.contains('dev-name') || el?.classList?.contains('dev-pace-in')) {
+    } else if (el?.classList?.contains('dev-name') || el?.classList?.contains('dev-pace-in') || el?.classList?.contains('dev-par-in')) {
       const r = el.dataset.r;
       const i = Number(el.dataset.i);
       state.devs = state.devs || { BE: [], FE: [] };
-      while (state.devs[r].length <= i) state.devs[r].push({ name: null, pace: null });
+      while (state.devs[r].length <= i) state.devs[r].push({ name: null, pace: null, par: null });
       const row = state.devs[r][i];
+      const num = el.value === '' ? null : Number(el.value);
       if (el.classList.contains('dev-name')) row.name = el.value.trim() || null;
-      else row.pace = el.value === '' ? null : Number(el.value);
+      else if (el.classList.contains('dev-par-in')) row.par = num;
+      else row.pace = num;
       state.devs = normDevs(state.devs);
       change(false);
     }

@@ -57,8 +57,9 @@ export function renderGantt(R, P, crit) {
   const all = [...P.sched.values()];
   rows.forEach((row) => {
     const items = all.filter((v) => v.t.role === row.r && v.lane === row.i);
-    const slotBg = state.par > 1 ? `, repeating-linear-gradient(to bottom, transparent 0 ${SLOT - 1}px, var(--grid) ${SLOT - 1}px ${SLOT}px)` : '';
-    h += `<div class="g-row"><div class="g-lab"><span class="role-dot ${row.r.toLowerCase()}"></span><span>${esc(row.n)}<small>${fa(Object.values(P.owners.own[row.r]).filter((i) => i === row.i).length)} اپیک${state.par > 1 ? ` · ${fa(state.par)} خط موازی` : ''}</small></span></div><div class="g-track" style="width:${W}px;height:${state.par * SLOT + 6}px;${gridBg.replace(/;$/, '')}${slotBg};background-position:0 3px">`;
+    const parN = P.pars?.[row.r]?.[row.i] ?? state.par;
+    const slotBg = parN > 1 ? `, repeating-linear-gradient(to bottom, transparent 0 ${SLOT - 1}px, var(--grid) ${SLOT - 1}px ${SLOT}px)` : '';
+    h += `<div class="g-row"><div class="g-lab"><span class="role-dot ${row.r.toLowerCase()}"></span><span>${esc(row.n)}<small>${fa(Object.values(P.owners.own[row.r]).filter((i) => i === row.i).length)} اپیک${parN > 1 ? ` · ${fa(parN)} خط موازی` : ''}</small></span></div><div class="g-track" style="width:${W}px;height:${parN * SLOT + 6}px;${gridBg.replace(/;$/, '')}${slotBg};background-position:0 3px">`;
     items.forEach((v) => {
       const s = v.t.s;
       const c = col(EP[s.ep].t);
