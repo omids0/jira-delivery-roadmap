@@ -132,3 +132,14 @@ test('bindOwners: delegated change pins the split, auto button resets, unbind wo
   fire('click', { closest: () => ({}) });
   assert.equal(calls.length, 4);
 });
+
+test('people: cards are collapsible and closed by default; opened ones stay open on re-render', async () => {
+  const { renderPeople } = await import('../src/render/people.js');
+  const ctx = fixture();
+  const R = createEnv(ctx, createEngine(ctx), { ...baseState, devs: { BE: [], FE: [] } });
+  const closed = renderPeople(R);
+  assert.ok(/<details class="person" data-pk="BE:0">/.test(closed) && !/<details class="person"[^>]* open/.test(closed));
+  assert.ok(/<summary class="person-h">/.test(closed));
+  const open = renderPeople(R, new Set(['BE:0']));
+  assert.ok(/<details class="person" data-pk="BE:0" open>/.test(open));
+});

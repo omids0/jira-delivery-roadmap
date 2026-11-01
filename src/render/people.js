@@ -1,8 +1,13 @@
 // Open work per person: every non-Done issue with an assignee in Jira, grouped by the
 // team member it belongs to. Pure: returns HTML, no DOM access.
 
-/** @returns {string} inner HTML of #people */
-export function renderPeople(R) {
+/**
+ * Each person is a collapsible card, closed by default. `open` holds the keys (data-pk) of the cards the
+ * user opened, so a re-render (a control changed) keeps them open.
+ * @param {Set<string>} [open]
+ * @returns {string} inner HTML of #people
+ */
+export function renderPeople(R, open = new Set()) {
   const { EP, EP_BY_KEY, PEOPLE, KEY_RE, JIRA, state, esc, fa, kb, personName, parseDay, fmtD } = R;
   const link = (k) => (KEY_RE.test(k) ? `<a href="${JIRA + esc(k)}" target="_blank" rel="noopener">${kb(k)}</a>` : kb(k));
   const rows = R.ASSIGNED || [];
@@ -30,15 +35,15 @@ export function renderPeople(R) {
     return Object.entries(c).map(([k, v]) => `<span><b>${fa(v)}</b> ${esc(typeFa(k))}</span>`).join('');
   };
   // title is trusted markup built by the caller below (names already escaped)
-  const card = (title, sub, list) => {
-    const head = `<div class="person-h"><span class="nm">${title}</span>${sub ? `<span>${esc(sub)}</span>` : ''}<span><b>${fa(list.length)}</b> کار باز</span>${counts(list)}</div>`;
-    return `<div class="person">${head}${list.length ? table(list) : '<div class="empty">در Jira کار بازی به این نفر assign نشده است.</div>'}</div>`;
+  const card = (pk, title, sub, list) => {
+    const head = `<summary class="person-h"><span class="nm">${title}</span>${sub ? `<span>${esc(sub)}</span>` : ''}<span><b>${fa(list.length)}</b> کار باز</span>${counts(list)}</summary>`;
+    return `<details class="person" data-pk="${esc(pk)}"${open.has(pk) ? ' open' : ''}>${head}${list.length ? table(list) : '<div class="empty">در Jira کار بازی به این نفر assign نشده است.</div>'}</details>`;
   };
   let h = members.map((m) => {
     const ids = jiraOf(m);
-    return card(`<span class="role-dot ${m.r.toLowerCase()}"></span>${esc(personName(m.r, m.i))}`, ids.length ? ids.join('، ') : 'هنوز به کسی در Jira وصل نشده', rows.filter((x) => ids.includes(x[5])));
+    return card(`${m.r}:${m.i}`, `<span class="role-dot ${m.r.toLowerCase()}"></span>${esc(personName(m.r, m.i))}`, ids.length ? ids.join('، ') : 'هنوز به کسی در Jira وصل نشده', rows.filter((x) => ids.includes(x[5])));
   }).join('');
   const others = [...new Set(rows.map((x) => x[5]).filter((n) => n && !mapped.has(n)))];
-  h += others.map((n) => card(`<span class="role-dot" style="background:var(--muted)"></span>${esc(n)}`, 'در Jira کار دارد ولی جزو نفرات برنامه نیست', rows.filter((x) => x[5] === n))).join('');
+  h += others.map((n) => card(`other:${n}`, `<span class="role-dot" style="background:var(--muted)"></span>${esc(n)}`, 'در Jira کار دارد ولی جزو نفرات برنامه نیست', rows.filter((x) => x[5] === n))).join('');
   return h;
 }

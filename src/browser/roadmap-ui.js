@@ -33,7 +33,7 @@ const clamp = (n) => Math.max(1, Math.min(6, n));
  */
 export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
   const R = createEnv(ctx, eng, state);
-  const ui = { P: null, crit: null, flowCtx: null, flowQuery: null, ganttIndex: {} };
+  const ui = { openPeople: new Set(), P: null, crit: null, flowCtx: null, flowQuery: null, ganttIndex: {} };
   const $ = (id) => doc.getElementById(id);
   const html = (id, v) => {
     const el = $(id);
@@ -71,7 +71,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     const own = renderOwners(R, P);
     html('own-tbl', own.table);
     text('own-sum', own.summary);
-    html('people', renderPeople(R));
+    html('people', renderPeople(R, ui.openPeople));
     html('epic-tbl', renderEpics(R, P));
     html('notes', renderNotes(R, P));
     const sp = renderSprints(R, P, crit);
@@ -117,6 +117,15 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     if (rebuildTeam) html('team', renderTeam(R));
     render();
   };
+
+  // which person cards are open (toggle does not bubble, so listen in the capture phase)
+  doc.addEventListener('toggle', (e) => {
+    const pk = e.target?.dataset?.pk;
+    if (e.target?.matches?.('#people details.person') && pk) {
+      if (e.target.open) ui.openPeople.add(pk);
+      else ui.openPeople.delete(pk);
+    }
+  }, true);
 
   // controls: delegated on the document itself (the page is rewritten by document.write on a repaint)
   doc.addEventListener('click', (e) => {

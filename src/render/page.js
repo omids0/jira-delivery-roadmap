@@ -26,6 +26,12 @@ const EXTRA_CSS = `
 .dev-name{flex:1 1 150px;min-width:0}
 .dev-pace{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg2)}
 .dev-pace-in{width:76px}
+details.person>summary{cursor:pointer;list-style:none;border-bottom:0}
+details.person>summary::-webkit-details-marker{display:none}
+details.person>summary::before{content:"◂";color:var(--muted);font-size:12px}
+details.person[open]>summary::before{content:"▾"}
+details.person[open]>summary{border-bottom:1px solid var(--line)}
+details.person>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .q-notes{margin:6px 0 0;padding-inline-start:20px;color:var(--fg2);font-size:13px}
 `;
 
