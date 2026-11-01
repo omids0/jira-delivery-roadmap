@@ -78,6 +78,7 @@ export function buildModel({ epics, stories, subtasks, epicField }, cfg) {
       title: i.fields.summary || '',
       epic: epicOf(i.fields, epicField),
       done: isDone(i.fields),
+      category: i.fields.status?.statusCategory?.key || null,
       status: i.fields.status?.name || '',
       labels: i.fields.labels || [],
       assignee: i.fields.assignee?.displayName || null,

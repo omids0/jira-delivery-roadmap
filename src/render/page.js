@@ -15,6 +15,7 @@ const EXTRA_CSS = `
 .jr-bar .who{color:var(--muted);font-size:12.5px}
 .set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
 .fld{display:grid;gap:4px;font-size:13px}
+.fld textarea{font:inherit;font-family:var(--f-mono);font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);resize:vertical}
 .fld input{font:inherit;padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg)}
 .team{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:grid;gap:8px}
 .team summary{cursor:pointer;font-weight:800;font-size:13.5px}
@@ -49,6 +50,19 @@ details.person>summary:focus-visible{outline:2px solid var(--accent);outline-off
 .ord-end span{position:absolute;top:-14px;inset-inline-start:4px;font-size:10px;color:var(--crit);white-space:nowrap}
 .ord-list{margin:8px 0 10px;padding-inline-start:30px;display:grid;gap:4px;font-size:12.5px}
 .ord-list .m2{color:var(--muted);font-size:11.5px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.modules{display:flex;flex-direction:column;gap:14px}
+.module-row{display:grid;grid-template-columns:170px 1fr 112px;align-items:center;gap:12px}
+.module-name{font-size:13px;font-weight:700}
+.module-code{display:block;font-family:var(--f-mono);direction:ltr;text-align:right;font-size:10.5px;color:var(--muted);margin-top:2px}
+.bar-track{display:flex;direction:rtl;height:20px;border-radius:6px;overflow:hidden;background:var(--grid);gap:2px}
+.bar-track .seg{height:100%}
+.seg.done{background:var(--s3)}.seg.wip{background:var(--s4)}.seg.backlog{background:var(--s7)}
+.module-pct{font-family:var(--f-mono);direction:ltr;text-align:left;font-size:11.5px;color:var(--fg2);white-space:nowrap}
+.module-pct b{color:var(--s3);font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono)}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%}
+.pill.d::before{background:var(--s3)}.pill.w::before{background:var(--s4)}.pill.b::before{background:var(--s7)}
+@media (max-width:640px){.module-row{grid-template-columns:1fr;gap:6px}.module-pct{text-align:right}}
 .q-notes{margin:6px 0 0;padding-inline-start:20px;color:var(--fg2);font-size:13px}
 `;
 
@@ -177,6 +191,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
         ${fld('jr-cbe', 'نام کامپوننت بک‌اند در Jira', settings.components.be, 'dir="ltr"')}
         ${fld('jr-cfe', 'نام کامپوننت فرانت در Jira', settings.components.fe, 'dir="ltr"')}
       </div>
+      <label class="fld"><span>نام ماژول‌ها (هر خط: کد=نام، مثلاً PROD=مدیریت کالا)</span><textarea id="jr-modlabels" rows="4" dir="ltr" spellcheck="false">${esc(Object.entries(settings.moduleLabels || {}).map(([k, v]) => k + '=' + v).join('\n'))}</textarea></label>
       <div><button type="button" class="btn" id="jr-confirm">تأیید</button> ${saved ? '<span class="r-status ok" role="status">ذخیره شد ✓</span>' : ''}</div>
       ${notes.length ? `<ul class="q-notes">${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
     </div>
@@ -184,6 +199,18 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
 
   <div class="kpis" id="kpis"></div>
   <div class="whatif" id="whatif"></div>
+
+  <section class="block" id="mod-sec">
+    <div class="block-head">
+      <div>
+        <h2>پیشرفت به تفکیک ماژول</h2>
+        <p class="lead" id="mod-note"></p>
+      </div>
+    </div>
+    <div class="own-body" style="padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)" id="mod-bars"></div>
+    <h3 class="sub-h">جدول کامل</h3>
+    <div class="tbl-scroll"><table id="mod-tbl"></table></div>
+  </section>
 
   <section class="block" id="fe-sec">
     <div class="block-head">

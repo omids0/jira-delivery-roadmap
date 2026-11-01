@@ -2,6 +2,7 @@
 // use (the same shapes the original hand-built roadmap used). Pure.
 import { roleOf } from './model.js';
 import { summarizeSprint } from './currentSprint.js';
+import { buildModules } from './modules.js';
 import { deriveSprints, nextSprint } from './sprints.js';
 
 export const KEY_RE = /^[A-Z][A-Z0-9_]+-\d+$/;
@@ -145,6 +146,6 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
     defaults: { be: est.be, fe: est.fe, storyPace: cfg.storyPace ?? 3.5 },
     defaultPace: { BE: cfg.defaultPace?.BE ?? 12, FE: cfg.defaultPace?.FE ?? 12 },
     team: cfg.team || { be: 1, fe: 1 }, parallel: cfg.parallelStories ?? 3,
-    labels: LBL, people, assignees, ASSIGNED, CURRENT_SPRINT
+    labels: LBL, people, assignees, ASSIGNED, CURRENT_SPRINT, MODULES: buildModules(model, cfg)
   };
 }

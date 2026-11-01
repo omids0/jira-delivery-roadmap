@@ -7,6 +7,7 @@ import { renderFeReady } from '../render/feReady.js';
 import { renderFlow } from '../render/flow.js';
 import { renderGantt } from '../render/gantt.js';
 import { computeSummary, legendHTML, renderKpis, renderWhatIf } from '../render/kpis.js';
+import { renderModules } from '../render/modules.js';
 import { renderNotes } from '../render/notes.js';
 import { renderOverview } from '../render/overview.js';
 import { renderOwners } from '../render/owners.js';
@@ -56,6 +57,10 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     html('kpis', renderKpis(R, P, crit));
     html('whatif', renderWhatIf(R, P, crit));
     html('fe-ready', renderFeReady(R, P));
+    const mod = renderModules(R);
+    text('mod-note', mod.note);
+    html('mod-bars', mod.bars);
+    html('mod-tbl', mod.table);
     const ov = renderOverview(R, P);
     html('ov-progress', ov.progress);
     html('ov', ov.map);

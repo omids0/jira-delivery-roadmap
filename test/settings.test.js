@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadSettings, normalizeSettings, saveSettings, settingsKey } from '../src/settings.js';
+import { loadSettings, normalizeSettings, parseModuleLabels, saveSettings, settingsKey } from '../src/settings.js';
 
-const base = { team: { be: 1, fe: 1 }, parallelStories: 3, components: { be: 'Back-End', fe: 'Front-End' } };
+const base = { team: { be: 1, fe: 1 }, parallelStories: 3, components: { be: 'Back-End', fe: 'Front-End' }, moduleLabels: {} };
 
 const memory = () => {
   const m = new Map();
@@ -42,4 +42,12 @@ test('corrupt storage value is ignored', () => {
 test('storage that throws on write reports failure', () => {
   const st = { getItem: () => null, setItem: () => { throw new Error('quota'); } };
   assert.equal(saveSettings(st, 'k', base), false);
+});
+
+test('module names: "CODE=Name" lines are parsed, junk lines and bad codes are dropped, config names are the default', () => {
+  assert.deepEqual(parseModuleLabels('PROD=مدیریت کالا\n bad code =x\nPDP = صفحه محصول \n=none\nSEL='), { PROD: 'مدیریت کالا', PDP: 'صفحه محصول' });
+  assert.deepEqual(parseModuleLabels({ A: 'a', 'b c': 'x' }), { A: 'a' });
+  assert.deepEqual(normalizeSettings(undefined, { ...base, moduleLabels: { PROD: 'Products' } }).moduleLabels, { PROD: 'Products' });
+  assert.deepEqual(normalizeSettings({ moduleLabels: 'A=1' }, { ...base, moduleLabels: { PROD: 'Products' } }).moduleLabels, { A: '1' });
+  assert.deepEqual(normalizeSettings({ moduleLabels: '' }, { ...base, moduleLabels: { PROD: 'Products' } }).moduleLabels, {}); // the user cleared them
 });

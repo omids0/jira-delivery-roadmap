@@ -9,6 +9,20 @@ const int = (v, min, max, fallback) => {
 const str = (v, fallback) => String(v ?? '').trim().slice(0, 60) || fallback;
 
 /** Clamps and trims raw input; anything missing or invalid falls back to `base`. */
+/** "CODE=Name" lines or an object -> { CODE: Name } (codes: letters, digits, _ and -). */
+export function parseModuleLabels(input) {
+  const out = {};
+  const pairs = typeof input === 'string'
+    ? input.split(/\r?\n/).map((l) => l.split(/=(.*)/s).slice(0, 2))
+    : Object.entries(input && typeof input === 'object' ? input : {});
+  for (const [k, v] of pairs) {
+    const key = String(k ?? '').trim();
+    const val = String(v ?? '').trim().slice(0, 60);
+    if (/^[A-Za-z0-9_-]{1,40}$/.test(key) && val && Object.keys(out).length < 100) out[key] = val;
+  }
+  return out;
+}
+
 export function normalizeSettings(raw, base) {
   const r = raw ?? {};
   return {
@@ -17,6 +31,7 @@ export function normalizeSettings(raw, base) {
       fe: int(r.team?.fe, 1, 20, base.team?.fe ?? 1)
     },
     parallelStories: int(r.parallelStories, 1, 10, base.parallelStories ?? 3),
+    moduleLabels: r.moduleLabels === undefined ? parseModuleLabels(base.moduleLabels) : parseModuleLabels(r.moduleLabels),
     components: {
       be: str(r.components?.be, base.components?.be ?? 'Back-End'),
       fe: str(r.components?.fe, base.components?.fe ?? 'Front-End')

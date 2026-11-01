@@ -104,7 +104,7 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
     if (!doc || !current) return;
     const val = (id) => doc.getElementById(id)?.value;
     const base = projectConfig(current);
-    const next = normalizeSettings({ ...settingsOf(current), components: { be: val('jr-cbe'), fe: val('jr-cfe') } }, base);
+    const next = normalizeSettings({ ...settingsOf(current), components: { be: val('jr-cbe'), fe: val('jr-cfe') }, moduleLabels: val('jr-modlabels') ?? '' }, base);
     saveSettings(storage, settingsKey(host, current), next);
     showProject(true);
   }
