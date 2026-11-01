@@ -44,6 +44,7 @@ details.person>summary:focus-visible{outline:2px solid var(--accent);outline-off
 .ord-blk{position:absolute;top:3px;height:24px;border-radius:4px;border:1px solid var(--c);background:color-mix(in oklab,var(--c) 28%,var(--surface));border-inline-start:4px solid var(--c);font-size:10.5px;line-height:22px;padding-inline:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:var(--f-mono)}
 .ord-blk.over{border-style:dashed;opacity:.75}
 .ord-blk.crit{box-shadow:0 0 0 2px var(--fg)}
+.ord-lab{position:absolute;inset-inline-end:4px;top:-1px;font-size:9.5px;color:var(--muted);z-index:1;pointer-events:none}
 .ord-end{position:absolute;top:-4px;bottom:-4px;border-inline-start:2px dashed var(--crit);z-index:2;pointer-events:none}
 .ord-end span{position:absolute;top:-14px;inset-inline-start:4px;font-size:10px;color:var(--crit);white-space:nowrap}
 .ord-list{margin:8px 0 10px;padding-inline-start:30px;display:grid;gap:4px;font-size:12.5px}

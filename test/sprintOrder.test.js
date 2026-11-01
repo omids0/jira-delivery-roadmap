@@ -83,3 +83,45 @@ test('card: ordered list per person, blocked stories listed, escaped, and the ov
   assert.ok(!/undefined|NaN/.test(html));
   assert.equal(renderSprintOrder(R, null), '');
 });
+
+import { describeOrder } from '../src/render/sprintOrder.js';
+
+const wide = () => [
+  story('PR-1', 'e1', 6, 4, { f: ['ip'] }),
+  story('PR-2', 'e1', 6, 0, { deps: ['PR-1'] }),
+  story('PR-3', 'e1', 6, 0),
+  story('PR-5', 'e2', 6, 0)
+];
+
+test('describeOrder: different epics run side by side; a dependent story waits on its blocker', () => {
+  const { eng, state, P } = setup(wide(), { par: 3 });
+  const N = eng.planSprintNow(state, P, ['PR-1', 'PR-2', 'PR-3', 'PR-5'], 20);
+  const d = describeOrder(N);
+  assert.ok(d.get('PR-5:BE').parallelWith.includes('PR-1'));
+  assert.equal(d.get('PR-5:BE').waits, null);
+  assert.deepEqual(d.get('PR-2:BE').waits, { key: 'PR-1', reason: 'dep' });
+});
+
+test('describeOrder: two stories of one epic never run together; the later one waits on the earlier', () => {
+  const { eng, state, P } = setup(wide(), { par: 3 });
+  const N = eng.planSprintNow(state, P, ['PR-1', 'PR-3', 'PR-5'], 20);
+  const d = describeOrder(N);
+  assert.ok(!d.get('PR-3:BE').parallelWith.includes('PR-1'));
+  assert.equal(d.get('PR-3:BE').waits.reason, 'epic');
+});
+
+test('describeOrder: with one line a story waits for a free line; the front-end follows half of the back-end', () => {
+  const { eng, state, P } = setup(wide(), { par: 1 });
+  const N = eng.planSprintNow(state, P, ['PR-1', 'PR-5'], 20);
+  const d = describeOrder(N);
+  assert.deepEqual(d.get('PR-5:BE').waits, { key: 'PR-1', reason: 'capacity' });
+  assert.deepEqual(d.get('PR-1:FE').waits, { key: 'PR-1', reason: 'contract' });
+});
+
+test('card is by role, not by person: back-end and front-end sections, numbered lines, reasons', () => {
+  const { eng, state, R, P } = setup(wide(), { par: 3 });
+  const html = renderSprintOrder(R, eng.planSprintNow(state, P, ['PR-1', 'PR-2', 'PR-3', 'PR-5'], 20));
+  assert.ok(html.includes('بک‌اند</span><span>') && html.includes('فرانت</span><span>'));
+  assert.ok(html.includes('خط ۱') && html.includes('هم‌زمان با') && html.includes('وابستگی') && html.includes('هم‌اپیک'));
+  assert.ok(!/undefined|NaN/.test(html));
+});
