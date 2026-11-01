@@ -15,10 +15,10 @@ const setup = (sprint = {}, over = {}) => {
 
 test('normSprint: valid values kept, out-of-range or junk becomes null, reserve defaults to 0', () => {
   assert.deepEqual(normSprint({ start: '2026-11-05', len: '12', n: 7, target: '30', be: 3, fe: 2, reserve: '20' }),
-    { start: '2026-11-05', len: 12, n: 7, target: 30, be: 3, fe: 2, reserve: 20 });
+    { start: '2026-11-05', basis: null, len: 12, n: 7, target: 30, be: 3, fe: 2, reserve: 20 });
   assert.deepEqual(normSprint({ start: '5/11/2026', len: 0, n: 'x', target: 9999, be: 9, fe: -1, reserve: 95 }),
-    { start: null, len: null, n: null, target: null, be: null, fe: null, reserve: 0 });
-  assert.deepEqual(normSprint(undefined), { start: null, len: null, n: null, target: null, be: null, fe: null, reserve: 0 });
+    { start: null, basis: null, len: null, n: null, target: null, be: null, fe: null, reserve: 0 });
+  assert.deepEqual(normSprint(undefined), { start: null, basis: null, len: null, n: null, target: null, be: null, fe: null, reserve: 0 });
 });
 
 test('state from an older version gets an empty sprint block', () => {

@@ -54,7 +54,7 @@ export function renderSprints(R, P, crit) {
   const list = (arr, fmt) => (arr.length ? `<ul>${arr.map(fmt).join('')}</ul>` : '<p>هیچ</p>');
   const next = `<article class="sp-next">
       <header class="sp-head">
-        <div class="t"><span class="eyebrow">پیشنهاد برای اسپرینت بعدی</span><h3>${spName(sp.n)} · ${range(sp)}</h3><p class="sp-goal">هدف: ${goalTxt}</p>${NEXT_SPRINT.target && sp.done.some((o) => o.stretch) ? `<p class="sp-goal">هدف اسپرینت ${fa(NEXT_SPRINT.target)} استوری است. با سرعت اسپرینت‌های قبل، ${fa(sp.done.filter((o) => !o.stretch).length)} استوری در این بازه تمام می‌شود و ${fa(sp.done.filter((o) => o.stretch).length)} استوری دیگر کششی‌اند: اگر تیم جلوتر از سرعت قبلی برود، این‌ها هم تحویل می‌شوند و گرنه به اسپرینت بعد می‌روند.</p>` : ''}</div>
+        <div class="t"><span class="eyebrow">پیشنهاد برای اسپرینت بعدی</span><h3>${spName(sp.n)} · ${range(sp)}</h3><p class="sp-goal">هدف: ${goalTxt}</p>${NEXT_SPRINT.target && sp.done.some((o) => o.stretch) ? `<p class="sp-goal">هدف اسپرینت ${fa(NEXT_SPRINT.target)} استوری است. با ${esc(P.paceLabel || 'سرعت اسپرینت‌های قبل')}، ${fa(sp.done.filter((o) => !o.stretch).length)} استوری در این بازه تمام می‌شود و ${fa(sp.done.filter((o) => o.stretch).length)} استوری دیگر کششی‌اند: اگر تیم جلوتر از سرعت قبلی برود، این‌ها هم تحویل می‌شوند و گرنه به اسپرینت بعد می‌روند.</p>` : ''}</div>
         <div class="sp-stats">
           <div><div class="v">${fa(realDone.length)}</div>استوری برای تحویل</div>
           <div><div class="v">${fa(activeN)}</div>اپیک در جریان</div>

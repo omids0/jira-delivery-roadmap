@@ -4,6 +4,7 @@ import { roleOf } from './model.js';
 import { summarizeSprint } from './currentSprint.js';
 import { buildModules } from './modules.js';
 import { deriveSprints, nextSprint } from './sprints.js';
+import { summarizeWorklogs, worklogWindow } from './worklog.js';
 
 export const KEY_RE = /^[A-Z][A-Z0-9_]+-\d+$/;
 
@@ -135,6 +136,17 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
     ];
   });
 
+  // time model from the worklogs of the last sprints (null when Jira gave none)
+  const roleCount = {};
+  subNorm.forEach((t) => {
+    if (t.assignee) (roleCount[t.assignee] = roleCount[t.assignee] || { be: 0, fe: 0 })[t.role]++;
+  });
+  const roleByName = Object.fromEntries(people.map((p) => [p.name, p.role.toLowerCase()]));
+  const roleOfName = (n) => roleByName[n] || (roleCount[n] && roleCount[n].fe > roleCount[n].be ? 'fe' : 'be');
+  const WORKLOG = raw.worklogIssues
+    ? summarizeWorklogs({ subtasks: raw.subtasks, worklogIssues: raw.worklogIssues, window: worklogWindow(sprints, now), weekend, cfg, roleOfName })
+    : null;
+
   const CURRENT_SPRINT = raw.activeSprint?.issues?.length
     ? summarizeSprint(raw.activeSprint.sprint, raw.activeSprint.issues, { cfg, today, weekend, epicField: raw.epicField, epicName: (k) => nameOf[k] || null })
     : null;
@@ -146,6 +158,6 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
     defaults: { be: est.be, fe: est.fe, storyPace: cfg.storyPace ?? 3.5 },
     defaultPace: { BE: cfg.defaultPace?.BE ?? 12, FE: cfg.defaultPace?.FE ?? 12 },
     team: cfg.team || { be: 1, fe: 1 }, parallel: cfg.parallelStories ?? 3,
-    labels: LBL, people, assignees, ASSIGNED, CURRENT_SPRINT, MODULES: buildModules(model, cfg)
+    labels: LBL, people, assignees, ASSIGNED, CURRENT_SPRINT, WORKLOG, MODULES: buildModules(model, cfg)
   };
 }

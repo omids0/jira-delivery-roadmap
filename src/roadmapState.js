@@ -4,7 +4,7 @@
 export const stateKey = (host, project) => `jira-roadmap:state:${host}:${project}`;
 
 const KEY_RE = /^[A-Z][A-Z0-9_]+-\d+$/;
-const PACES = ['avg', 'opt', 'pes'];
+const PACES = ['avg', 'opt', 'pes', 'wl']; // wl = pace from worklogs
 const clamp = (n, lo, hi, fallback) => {
   const v = Number.parseInt(n, 10);
   return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
@@ -28,7 +28,7 @@ const intIn = (v, lo, hi) => {
 export function normSprint(s) {
   const start = typeof s?.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.start) && !Number.isNaN(Date.parse(s.start)) ? s.start : null;
   return {
-    start, len: intIn(s?.len, 1, 30), n: intIn(s?.n, 1, 9999), target: intIn(s?.target, 1, 500),
+    start, basis: ['wl', 'velocity'].includes(s?.basis) ? s.basis : null, len: intIn(s?.len, 1, 30), n: intIn(s?.n, 1, 9999), target: intIn(s?.target, 1, 500),
     be: intIn(s?.be, 1, 6), fe: intIn(s?.fe, 1, 6), reserve: intIn(s?.reserve, 0, 80) || 0
   };
 }

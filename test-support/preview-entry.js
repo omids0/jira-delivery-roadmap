@@ -41,6 +41,13 @@ const raw = {
     { id: 4, name: 'Sprint 9', state: 'active', startDate: day(14), endDate: day(-1) }
   ]
 };
+// logged time: closed sub-tasks carry the time spent, and people log hours on their work days
+const closed = subtasks.filter((t) => t.fields.status.statusCategory.key === 'done');
+for (const t of closed) t.fields.timespent = (t.key.includes('-be') ? 5 : 3) * 3600 + int(-3600, 3600);
+raw.worklogIssues = closed.map((t) => ({
+  key: t.key,
+  fields: { worklog: { total: 3, worklogs: [0, 1, 2].map(() => ({ author: t.fields.assignee, started: day(int(1, 55)), timeSpentSeconds: int(2, 4) * 3600 })) } }
+}));
 // the running sprint holds stories 9..22 and their sub-tasks
 const inSprint = (key) => { const n = Number(key.split('-')[1]); return n >= 9 && n <= 22; };
 raw.activeSprint = {

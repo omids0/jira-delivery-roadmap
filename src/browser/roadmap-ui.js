@@ -19,6 +19,7 @@ import { renderSprints } from '../render/sprints.js';
 import { renderSprintSettings } from '../render/sprintSettings.js';
 import { renderTeam } from '../render/team.js';
 import { renderVelocity } from '../render/velocity.js';
+import { renderWorklogPanel } from '../render/worklogPanel.js';
 import { normDevs, normOwn, normSprint } from '../roadmapState.js';
 import { bindFlow } from './flow-ui.js';
 import { bindOwners } from './owners-ui.js';
@@ -91,6 +92,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     const cur = ctx.CURRENT_SPRINT;
     if ($('now-sec')) $('now-sec').hidden = !cur; // no running sprint: the whole section stays hidden
     html('sp-order', cur ? renderSprintOrder(R, eng.planSprintNow(state, P, cur.epics.flatMap((g) => g.items.filter((x) => x.cat !== 'done').map((x) => x.k)), cur.days.left)) : '');
+    html('sp-wl', renderWorklogPanel(R));
     html('sp-next', sp.next);
     html('sp-matrix', sp.matrix);
     html('legend-sp', sp.legend);

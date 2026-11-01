@@ -22,6 +22,11 @@ export function renderSprintSettings(R) {
     ${num('be', 'نفرات بک‌اند', o.be, state.be, 1, 6)}
     ${num('fe', 'نفرات فرانت', o.fe, state.fe, 1, 6)}
     ${num('reserve', 'ذخیره برای باگ و کار دیگر (٪)', o.reserve || '', '۰', 0, 80)}
+    <label class="fld"><span>مبنای سرعت این پیشنهاد</span><select class="sp-in" data-k="basis">
+      <option value=""${o.basis ? '' : ' selected'}>پیش‌فرض (ورک‌لاگ‌ها، اگر کافی بود)</option>
+      <option value="wl"${o.basis === 'wl' ? ' selected' : ''}>میانگین ورک‌لاگ‌ها</option>
+      <option value="velocity"${o.basis === 'velocity' ? ' selected' : ''}>سرعت اسپرینت‌های قبل</option>
+    </select></label>
   </div>
   <div><button type="button" class="btn ghost" id="sp-reset">بازنشانی به پیش‌فرض</button>
   <span class="fq-status">اسپرینت ${esc(fa(base.n, 0))}، ${esc(fa(base.len, 0))} روز کاری، از ${esc(base.start)}${base.target ? `، هدف ${esc(fa(base.target, 0))} استوری` : ''}.</span></div>`;

@@ -43,6 +43,11 @@ export function createEngine(ctx) {
   const { wdIndex } = cal;
   const { EP, EP_ORDER } = ctx;
   const PACE = computePace(ctx.SPRINTS, ctx.defaultPace);
+  // pace from logged time (hours per day / hours per sub-task); a role without enough data keeps the sprint-velocity figure
+  if (ctx.WORKLOG?.pace) {
+    PACE.wl = { BE: ctx.WORKLOG.pace.BE ?? PACE.avg.BE, FE: ctx.WORKLOG.pace.FE ?? PACE.avg.FE, n: 'میانگین ورک‌لاگ‌های ثبت‌شده' };
+  }
+  const PACE_LABEL = { avg: 'سرعت اسپرینت‌های قبل', opt: 'سرعت خوش‌بینانه', pes: 'سرعت محتاطانه', wl: 'میانگین ورک‌لاگ‌های ثبت‌شده' };
   const STORY_PACE = ctx.SPRINTS.length
     ? ctx.SPRINTS.reduce((a, sp) => a + sp.stories, 0) / ctx.SPRINTS.reduce((a, sp) => a + sp.wd, 0)
     : ctx.defaults.storyPace;
@@ -99,9 +104,13 @@ export function createEngine(ctx) {
   function devPaces(state) {
     const base = PACE[state.pace] || PACE.avg;
     const keep = 1 - Math.min(80, Math.max(0, Number(state.reserve) || 0)) / 100; // share kept for bugs and other work
+    // with the worklog scenario a named person gets their own logged figure
+    const logged = state.pace === 'wl' ? ctx.WORKLOG?.people : null;
+    const nameOf = (r, i) => state.devs?.[r]?.[i]?.name || ctx.people?.find((p) => p.role === r && p.n === i + 1)?.name;
     const of = (r, n) => Array.from({ length: n }, (_, i) => {
-      const p = Number(state.devs?.[r]?.[i]?.pace);
-      return (Number.isFinite(p) && p > 0 ? p : base[r]) * keep;
+      const own = Number(state.devs?.[r]?.[i]?.pace);
+      const wl = Number(logged?.[nameOf(r, i)]?.pace);
+      return (Number.isFinite(own) && own > 0 ? own : wl > 0 ? wl : base[r]) * keep;
     });
     return { BE: of('BE', state.be), FE: of('FE', state.fe) };
   }
@@ -354,14 +363,21 @@ export function createEngine(ctx) {
     const tasks = buildTasks(list, paceOf, parOf, off, sprintOpts(state));
     const sched = schedule(tasks, state.be, state.fe, off, pars, owners);
     const span = Math.max(off, ...[...sched.values()].map((v) => v.e));
-    return { list, tasks, sched, span, off, owners, paces, pars };
+    return { list, tasks, sched, span, off, owners, paces, pars, paceKey: state.pace, paceLabel: PACE_LABEL[state.pace] };
   }
 
   /** The plan the sprint proposal is built from: the main plan, unless the sprint has its own team size or reserve. */
+  /** The pace of the sprint proposal: logged time when there is enough of it (unless the user chose sprint velocity). */
+  function sprintPaceKey(state) {
+    if (state.sprint?.basis === 'velocity') return state.pace === 'wl' ? 'avg' : state.pace;
+    return PACE.wl ? 'wl' : state.pace;
+  }
+
   function planForSprint(state) {
     const o = state.sprint || {};
-    if (o.be == null && o.fe == null && !o.reserve) return plan(state);
-    return plan({ ...state, be: o.be ?? state.be, fe: o.fe ?? state.fe, reserve: o.reserve || 0 });
+    const pace = sprintPaceKey(state);
+    if (o.be == null && o.fe == null && !o.reserve && pace === state.pace) return plan(state);
+    return plan({ ...state, pace, be: o.be ?? state.be, fe: o.fe ?? state.fe, reserve: o.reserve || 0 });
   }
 
   /**
@@ -482,7 +498,7 @@ export function createEngine(ctx) {
     return { sprints: out, sprintOf };
   }
 
-  return { cal, PACE, STORY_PACE, devPaces, devPars, planSprintNow, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
+  return { cal, PACE, STORY_PACE, sprintPaceKey, devPaces, devPars, planSprintNow, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
 }
 
 /** Overlaps that must never happen in a schedule: [{ kind: 'slot' | 'epic', a, b }] (empty = clean). */

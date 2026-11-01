@@ -170,7 +170,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     ${stepper('fe', 'فرانت', 'fe', state.fe)}
     <span class="sep" aria-hidden="true"></span>
     <div class="seg" role="radiogroup" aria-label="سناریوی سرعت">
-      ${pace('avg', 'میانگین اسپرینت‌های قبل')}${pace('opt', 'خوش‌بینانه')}${pace('pes', 'محتاطانه')}
+      ${pace('avg', 'میانگین اسپرینت‌های قبل')}${pace('opt', 'خوش‌بینانه')}${pace('pes', 'محتاطانه')}${ctx.WORKLOG?.pace ? pace('wl', 'بر اساس ورک‌لاگ') : ''}
     </div>
     <span class="sep" aria-hidden="true"></span>
     ${toggle('opt-p2', 'فاز ۲ (phase-2)', count('p2'), state.p2)}
@@ -332,6 +332,10 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <details class="own" id="sp-cfg-box" open>
       <summary>تنظیمات اسپرینت پیشنهادی</summary>
       <div class="own-body" id="sp-cfg"></div>
+    </details>
+    <details class="own" id="sp-wl-box" open>
+      <summary>تخمین از ورک‌لاگ‌های ثبت‌شده</summary>
+      <div class="own-body" id="sp-wl"></div>
     </details>
     <div id="sp-next"></div>
     <h3 class="sub-h">همهٔ اسپرینت‌ها تا پایان پروژه</h3>

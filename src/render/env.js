@@ -24,7 +24,7 @@ export function createEnv(ctx, eng, state) {
     get NEXT_SPRINT() {
       return eng.sprintOpts(state);
     },
-    DEP_INFO: ctx.DEP_INFO, ASSIGNED: ctx.ASSIGNED, CURRENT_SPRINT: ctx.CURRENT_SPRINT || null, MODULES: ctx.MODULES || null,
+    DEP_INFO: ctx.DEP_INFO, ASSIGNED: ctx.ASSIGNED, CURRENT_SPRINT: ctx.CURRENT_SPRINT || null, MODULES: ctx.MODULES || null, WORKLOG: ctx.WORKLOG || null,
     // team members: the ones the user named replace the auto-detected people of the same slot
     get PEOPLE() {
       const out = people.map((p) => ({ ...p }));
