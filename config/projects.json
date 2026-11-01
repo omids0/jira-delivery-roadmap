@@ -1,0 +1,10 @@
+{
+  "defaults": {
+    "components": { "be": "Back-End", "fe": "Front-End" },
+    "weekend": [4, 5],
+    "locale": "fa-IR-u-ca-persian",
+    "team": { "be": 1, "fe": 1 },
+    "parallelStories": 3
+  },
+  "projects": {}
+}
