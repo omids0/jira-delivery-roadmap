@@ -5,7 +5,7 @@ import { createEnv } from '../render/env.js';
 import { JiraError, getMyself, isValidProjectKey, listProjects } from '../jiraClient.js';
 import { buildModel, summarize } from '../model.js';
 import { qualityNotes } from '../quality.js';
-import { renderHome, renderLoading, renderPage, setPageTheme } from '../render/page.js';
+import { addFont, renderHome, renderLoading, renderPage, setPageTheme } from '../render/page.js';
 import { loadState, saveState, stateKey } from '../roadmapState.js';
 import { loadSettings, normalizeSettings, saveSettings, settingsKey } from '../settings.js';
 import { mountRoadmap } from './roadmap-ui.js';
@@ -49,6 +49,7 @@ export function createBrowserApp({ frame, baseUrl, projectConfig, storage, onClo
     doc.open();
     doc.write(html);
     doc.close();
+    addFont(doc);
     // document.open() drops every listener: bind on the document (events bubble to it).
     doc.addEventListener('change', (e) => {
       if (e.target?.id === 'jr-project') openProject(e.target.value);

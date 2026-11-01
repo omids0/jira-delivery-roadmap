@@ -19,11 +19,27 @@ export function normOwn(o) {
   return out;
 }
 
+/** Per-person settings: { BE: [{ name, pace }], FE: [...] }; name = chosen team member, pace = sub-tasks per workday (null: use the scenario pace). */
+export function normDevs(d) {
+  const out = { BE: [], FE: [] };
+  for (const r of ['BE', 'FE']) {
+    const list = Array.isArray(d?.[r]) ? d[r].slice(0, 6) : [];
+    out[r] = list.map((x) => {
+      const pace = Number(x?.pace);
+      return {
+        name: typeof x?.name === 'string' && x.name.trim() ? x.name.trim().slice(0, 60) : null,
+        pace: x?.pace != null && Number.isFinite(pace) && pace >= 0.5 && pace <= 200 ? Math.round(pace * 10) / 10 : null
+      };
+    });
+  }
+  return out;
+}
+
 /** @param {object} cfg merged project config (team, parallelStories) */
 export function defaultState(cfg) {
   return {
     be: clamp(cfg.team?.be, 1, 6, 1), fe: clamp(cfg.team?.fe, 1, 6, 1), par: clamp(cfg.parallelStories, 1, 6, 3),
-    pace: 'avg', p2: true, p3: true, def: false, hist: true, own: { BE: {}, FE: {} }
+    pace: 'avg', p2: true, p3: true, def: false, hist: true, own: { BE: {}, FE: {} }, devs: { BE: [], FE: [] }
   };
 }
 
@@ -34,7 +50,8 @@ export function normalizeState(raw, base) {
     pace: PACES.includes(r.pace) ? r.pace : base.pace,
     p2: typeof r.p2 === 'boolean' ? r.p2 : base.p2, p3: typeof r.p3 === 'boolean' ? r.p3 : base.p3,
     def: typeof r.def === 'boolean' ? r.def : base.def, hist: typeof r.hist === 'boolean' ? r.hist : base.hist,
-    own: normOwn(r.own)
+    own: normOwn(r.own),
+    devs: normDevs(r.devs)
   };
 }
 

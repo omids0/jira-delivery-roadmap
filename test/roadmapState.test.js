@@ -9,7 +9,7 @@ const mem = () => {
 const cfg = { team: { be: 2, fe: 1 }, parallelStories: 3 };
 
 test('defaults come from the project config', () => {
-  assert.deepEqual(defaultState(cfg), { be: 2, fe: 1, par: 3, pace: 'avg', p2: true, p3: true, def: false, hist: true, own: { BE: {}, FE: {} } });
+  assert.deepEqual(defaultState(cfg), { be: 2, fe: 1, par: 3, pace: 'avg', p2: true, p3: true, def: false, hist: true, own: { BE: {}, FE: {} }, devs: { BE: [], FE: [] } });
 });
 
 test('numbers are clamped to 1..6, junk falls back, pace must be a known scenario', () => {

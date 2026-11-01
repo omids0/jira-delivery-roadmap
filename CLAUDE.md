@@ -7,7 +7,7 @@ Persian-language (RTL) bookmarklet app: delivery roadmap for any Jira Data Cente
 - `README.md`: user-facing install + config docs.
 
 ## State
-Done (v0.3): full roadmap, same structure as the original reference artifact: collect → model → adapter (ctx) → engine (plan, critical chain, sprint plan) → render/* sections + browser/*-ui.js behaviour, mounted by `browser/roadmap-ui.js`. Preview without Jira: `node scripts/preview.js <dir>` then serve it (synthetic data in `test-support/preview-entry.js`). Untested against a real Jira beyond the earlier project-view smoke test: verify live numbers against the reference artifact.
+Done (v0.3): full roadmap, same structure as the original reference artifact: collect → model → adapter (ctx) → engine (plan, critical chain, sprint plan) → render/* sections + browser/*-ui.js behaviour, mounted by `browser/roadmap-ui.js`. Preview without Jira: `node scripts/preview.js <dir>` then serve it (synthetic data in `test-support/preview-entry.js`). Team panel: per-person name (pick-list of Jira assignees) and sub-tasks/day in `state.devs`; engine uses each owner's pace (`devPaces`), empty pace = scenario pace. Never put a blocking `<link rel=stylesheet>` in the document.write'n page (it holds the parser; see `addFont`). Untested against a real Jira beyond the earlier project-view smoke test: verify live numbers against the reference artifact.
 
 ## Rules
 - **Public repo, public GitHub Pages. Never commit company data** (project keys, epic/story titles, people names, Jira URLs). `reference/` is gitignored and holds a local-only company artifact (`reference/original-artifact.html`) used as the behavioral spec; read it, never copy its data into tracked files.

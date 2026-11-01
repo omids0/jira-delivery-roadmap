@@ -16,10 +16,36 @@ const EXTRA_CSS = `
 .set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
 .fld{display:grid;gap:4px;font-size:13px}
 .fld input{font:inherit;padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg)}
+.team{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:grid;gap:8px}
+.team summary{cursor:pointer;font-weight:800;font-size:13.5px}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px 24px}
+.team-col h3{display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 6px}
+.dev{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:4px 0}
+.dev-n{width:18px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
+.dev input{font:inherit;font-size:13px;padding:4px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg)}
+.dev-name{flex:1 1 150px;min-width:0}
+.dev-pace{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg2)}
+.dev-pace-in{width:76px}
 .q-notes{margin:6px 0 0;padding-inline-start:20px;color:var(--fg2);font-size:13px}
 `;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+export const FONT_URL = 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap';
+
+/**
+ * Loads the web font without blocking: a stylesheet <link> inside a document.write'n page holds the parser
+ * (and the page stays empty) until it arrives, which never happens on a network without internet access.
+ */
+export function addFont(doc) {
+  const head = doc?.head;
+  if (!head || head.querySelector('link[data-jr-font]')) return;
+  const link = doc.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = FONT_URL;
+  link.setAttribute('data-jr-font', '');
+  head.appendChild(link);
+}
 
 let theme = null;
 /** 'light' | 'dark' | null (follow the system); used for every page painted after this call. */
@@ -28,7 +54,6 @@ export const setPageTheme = (t) => {
 };
 
 const html = (body) => `<!doctype html><html lang="fa" dir="rtl"${theme ? ` data-theme="${theme}"` : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>نقشه راه تحویل Jira</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>${CSS}${EXTRA_CSS}</style></head><body>${body}</body></html>`;
 
 export const renderLoading = (text) => html(`<main style="text-align:center;padding:80px 20px;color:var(--muted)">${esc(text)}</main>`);
@@ -116,6 +141,11 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <label class="toggle"><input type="checkbox" id="opt-hist"${state.hist ? ' checked' : ''}><span>استوری‌های انجام‌شدهٔ قبلی</span></label>
     ${toggle('opt-def', 'موارد به‌تعویق‌افتاده (deferred)', count('def'), state.def)}
   </div>
+
+  <details class="team" id="team-box" open>
+    <summary>نفرات تیم و سرعت هر نفر</summary>
+    <div id="team"></div>
+  </details>
 
   <details class="own" id="settings-box">
     <summary>تنظیمات پروژه و کیفیت دیتا</summary>

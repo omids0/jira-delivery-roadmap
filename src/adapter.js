@@ -112,6 +112,12 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
     }
   }
 
+  // every Jira person seen on the project's sub-tasks and open work, most active first (the pick-list for team members)
+  const seen = {};
+  subNorm.forEach((t) => t.assignee && (seen[t.assignee] = (seen[t.assignee] || 0) + 1));
+  assigned.forEach((i) => i.fields.assignee?.displayName && (seen[i.fields.assignee.displayName] = (seen[i.fields.assignee.displayName] || 0) + 1));
+  const assignees = Object.entries(seen).sort((a, b) => b[1] - a[1]).map(([n]) => n);
+
   const ASSIGNED = assigned.map((i) => {
     const e = raw.epicField ? i.fields[raw.epicField] : null;
     return [
@@ -127,6 +133,6 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
     defaults: { be: est.be, fe: est.fe, storyPace: cfg.storyPace ?? 3.5 },
     defaultPace: { BE: cfg.defaultPace?.BE ?? 12, FE: cfg.defaultPace?.FE ?? 12 },
     team: cfg.team || { be: 1, fe: 1 }, parallel: cfg.parallelStories ?? 3,
-    labels: LBL, people, ASSIGNED
+    labels: LBL, people, assignees, ASSIGNED
   };
 }

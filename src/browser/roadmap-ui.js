@@ -12,8 +12,9 @@ import { renderOwners } from '../render/owners.js';
 import { renderPeople } from '../render/people.js';
 import { renderRaw } from '../render/raw.js';
 import { renderSprints } from '../render/sprints.js';
+import { renderTeam } from '../render/team.js';
 import { renderVelocity } from '../render/velocity.js';
-import { normOwn } from '../roadmapState.js';
+import { normDevs, normOwn } from '../roadmapState.js';
 import { bindFlow } from './flow-ui.js';
 import { bindOwners } from './owners-ui.js';
 import { bindTooltips } from './tooltip.js';
@@ -110,8 +111,10 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     text('par-n', R.fa(state.par, 0));
   }
 
-  const change = () => {
+  // the team panel is rebuilt only when its row count or placeholder pace changes, never while someone types in it
+  const change = (rebuildTeam = true) => {
     persist();
+    if (rebuildTeam) html('team', renderTeam(R));
     render();
   };
 
@@ -132,10 +135,21 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
       change();
     } else if (/^opt-(p2|p3|def|hist)$/.test(el?.id || '')) {
       state[el.id.slice(4)] = !!el.checked;
-      change();
+      change(false);
+    } else if (el?.classList?.contains('dev-name') || el?.classList?.contains('dev-pace-in')) {
+      const r = el.dataset.r;
+      const i = Number(el.dataset.i);
+      state.devs = state.devs || { BE: [], FE: [] };
+      while (state.devs[r].length <= i) state.devs[r].push({ name: null, pace: null });
+      const row = state.devs[r][i];
+      if (el.classList.contains('dev-name')) row.name = el.value.trim() || null;
+      else row.pace = el.value === '' ? null : Number(el.value);
+      state.devs = normDevs(state.devs);
+      change(false);
     }
   });
 
+  html('team', renderTeam(R));
   render();
 
   return {

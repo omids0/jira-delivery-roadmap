@@ -15,7 +15,7 @@ const page = (over = {}) => {
 
 test('page has every section container the UI fills by id', () => {
   const html = page();
-  for (const id of ['kpis', 'whatif', 'ov', 'ov-progress', 'vel-tbl', 'flow', 'flow-q', 'gantt', 'own-tbl', 'people', 'epic-tbl', 'notes', 'sp-next', 'sp-matrix', 'raw-tbl', 'refresh-btn', 'jr-confirm', 'jr-project']) {
+  for (const id of ['team', 'kpis', 'whatif', 'ov', 'ov-progress', 'vel-tbl', 'flow', 'flow-q', 'gantt', 'own-tbl', 'people', 'epic-tbl', 'notes', 'sp-next', 'sp-matrix', 'raw-tbl', 'refresh-btn', 'jr-confirm', 'jr-project']) {
     assert.ok(html.includes(`id="${id}"`), id);
   }
 });
@@ -69,4 +69,9 @@ test('theme: pages carry data-theme only when one is chosen; every page has the 
   assert.match(page(), /data-theme="light"/);
   setPageTheme(null);
   assert.ok(renderHome({ projects: [], user: '' }).includes('<html lang="fa" dir="rtl">'));
+});
+
+test('the page markup has no blocking external stylesheet (it must render without internet access)', () => {
+  assert.ok(!/<link[^>]+stylesheet/i.test(page()));
+  assert.ok(!/<link[^>]+stylesheet/i.test(renderHome({ projects: [], user: '' })));
 });

@@ -89,7 +89,17 @@ export function createEngine(ctx) {
     return list;
   }
 
-  function buildTasks(list, pace, off, par) {
+  /** sub-tasks per workday of each developer: their own figure, else the scenario pace of the role */
+  function devPaces(state) {
+    const base = PACE[state.pace] || PACE.avg;
+    const of = (r, n) => Array.from({ length: n }, (_, i) => {
+      const p = Number(state.devs?.[r]?.[i]?.pace);
+      return Number.isFinite(p) && p > 0 ? p : base[r];
+    });
+    return { BE: of('BE', state.be), FE: of('FE', state.fe) };
+  }
+
+  function buildTasks(list, paceOf, off, par) {
     const tasks = [];
     const tk = {};
     const holdLow = ctx.priority?.holdLow && NEXT ? wdIndex(parseDay(NEXT.start)) + (NEXT.firstLen || NEXT.len || 10) : 0;
@@ -98,7 +108,7 @@ export function createEngine(ctx) {
         const subs = r === 'BE' ? s.sbe : s.sfe;
         if (subs > 0) {
           const t = {
-            id: s.k + ':' + r, role: r, subs, dur: Math.round((100 * subs * par) / pace[r]) / 100, s, preds: [], succ: [],
+            id: s.k + ':' + r, role: r, subs, dur: Math.round((100 * subs * par) / paceOf(r, s.ep)) / 100, s, preds: [], succ: [],
             release: Math.max(off + (s.f.includes('d') ? GATE : 0), s.rank === 2 ? holdLow : 0)
           };
           tasks.push(t);
@@ -151,10 +161,12 @@ export function createEngine(ctx) {
 
   // Each epic's backend work belongs to one backend developer and its front-end work to one front-end developer.
   // Manual choices (keyed by epic key) win; the rest go to whoever has the least work so far.
-  function resolveOwners(list, nBE, nFE, manual) {
+  function resolveOwners(list, nBE, nFE, manual, paces) {
     const own = { BE: {}, FE: {} };
     const need = { BE: {}, FE: {} };
-    const load = { BE: Array(nBE).fill(0), FE: Array(nFE).fill(0) };
+    const load = { BE: Array(nBE).fill(0), FE: Array(nFE).fill(0) }; // sub-tasks per developer (shown in the owners table)
+    const days = { BE: Array(nBE).fill(0), FE: Array(nFE).fill(0) }; // workdays per developer (balances the split)
+    const speed = (r, i) => paces?.[r]?.[i] || 1;
     [['BE', nBE, 'sbe'], ['FE', nFE, 'sfe']].forEach(([r, n, f]) => {
       list.forEach((s) => {
         if (!s.done && !s.rc && s[f] > 0) need[r][s.ep] = (need[r][s.ep] || 0) + s[f];
@@ -166,14 +178,24 @@ export function createEngine(ctx) {
         if (m != null && m >= 0 && m < n) {
           own[r][ep] = m;
           load[r][m] += need[r][ep];
+          days[r][m] += need[r][ep] / speed(r, m);
         }
       });
       eps.forEach((ep) => {
         if (own[r][ep] != null || !n) return;
         let i = 0;
-        for (let j = 1; j < n; j++) if (load[r][j] < load[r][i]) i = j;
+        // the developer who would be free first once this epic is added (slower people take less)
+        let best = Infinity;
+        for (let j = 0; j < n; j++) {
+          const t = days[r][j] + need[r][ep] / speed(r, j);
+          if (t < best - 1e-9) {
+            best = t;
+            i = j;
+          }
+        }
         own[r][ep] = i;
         load[r][i] += need[r][ep];
+        days[r][i] += need[r][ep] / speed(r, i);
       });
     });
     return { own, need, load };
@@ -308,11 +330,14 @@ export function createEngine(ctx) {
     const off = 0;
     const list = stories(state);
     const par = Math.max(1, state.par || 1);
-    const owners = resolveOwners(list, state.be, state.fe, state.own);
-    const tasks = buildTasks(list, PACE[state.pace] || PACE.avg, off, par);
+    const paces = devPaces(state);
+    const owners = resolveOwners(list, state.be, state.fe, state.own, paces);
+    const base = PACE[state.pace] || PACE.avg;
+    const paceOf = (r, ep) => paces[r][owners.own[r][ep]] ?? base[r];
+    const tasks = buildTasks(list, paceOf, off, par);
     const sched = schedule(tasks, state.be, state.fe, off, par, owners);
     const span = Math.max(off, ...[...sched.values()].map((v) => v.e));
-    return { list, tasks, sched, span, off, owners };
+    return { list, tasks, sched, span, off, owners, paces };
   }
 
   function epicFinish(P) {
@@ -373,12 +398,13 @@ export function createEngine(ctx) {
         }
       });
       const days = w1 - a0;
-      const cap = { BE: state.be * PACE[state.pace].BE * days, FE: state.fe * PACE[state.pace].FE * days };
+      const sumPace = (r) => P.paces[r].reduce((a, b) => a + b, 0);
+      const cap = { BE: sumPace('BE') * days, FE: sumPace('FE') * days };
       const goals = Object.entries(fin).filter(([ep, f]) => ep !== 'en' && sprintOf(f.e - 1e-6) === n).map(([ep]) => ep);
       out.push({ n, w0: a0, w1, done, started, load, cap, active: Object.keys(active), goals, days });
     }
     return { sprints: out, sprintOf };
   }
 
-  return { cal, PACE, STORY_PACE, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
+  return { cal, PACE, STORY_PACE, devPaces, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
 }

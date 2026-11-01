@@ -5,7 +5,7 @@ import { createEngine } from '../src/engine.js';
 import { buildModel, summarize } from '../src/model.js';
 import { qualityNotes } from '../src/quality.js';
 import { createEnv } from '../src/render/env.js';
-import { renderPage } from '../src/render/page.js';
+import { addFont, renderPage } from '../src/render/page.js';
 import { defaultState } from '../src/roadmapState.js';
 import { mountRoadmap } from '../src/browser/roadmap-ui.js';
 
@@ -51,4 +51,5 @@ const R = createEnv(ctx, eng, state);
 document.open();
 document.write(renderPage(R, { projects: [{ key: 'PRJ', name: 'Preview project' }], user: 'Preview', key: 'PRJ', projectName: 'Preview project', settings, notes: qualityNotes(summarize(model)) }));
 document.close();
+addFont(document);
 window.__view = mountRoadmap({ doc: document, ctx, eng, state, persist() {}, onRefresh() {} });
