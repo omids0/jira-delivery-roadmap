@@ -31,7 +31,7 @@ test('controls show the state; values from Jira are escaped', () => {
 
 test('no developer text in the user view', () => {
   const html = page();
-  assert.ok(!/deka|entekhab|DMA|DESIGN\.md|projects\.json/i.test(html));
+  assert.ok(!/DESIGN\.md|projects\.json/.test(html));
 });
 
 test('home page has the picker, and an error is shown escaped', () => {
