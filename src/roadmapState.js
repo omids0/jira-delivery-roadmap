@@ -19,6 +19,20 @@ export function normOwn(o) {
   return out;
 }
 
+const intIn = (v, lo, hi) => {
+  const n = Number.parseInt(v, 10);
+  return Number.isFinite(n) && n >= lo && n <= hi ? n : null;
+};
+
+/** Settings of the proposed sprint; null = use the board's default. reserve = percent of capacity kept for bugs and other work. */
+export function normSprint(s) {
+  const start = typeof s?.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.start) && !Number.isNaN(Date.parse(s.start)) ? s.start : null;
+  return {
+    start, len: intIn(s?.len, 1, 30), n: intIn(s?.n, 1, 9999), target: intIn(s?.target, 1, 500),
+    be: intIn(s?.be, 1, 6), fe: intIn(s?.fe, 1, 6), par: intIn(s?.par, 1, 6), reserve: intIn(s?.reserve, 0, 80) || 0
+  };
+}
+
 /** Per-person settings: { BE: [{ name, pace }], FE: [...] }; name = chosen team member, pace = sub-tasks per workday (null: use the scenario pace). */
 export function normDevs(d) {
   const out = { BE: [], FE: [] };
@@ -39,7 +53,7 @@ export function normDevs(d) {
 export function defaultState(cfg) {
   return {
     be: clamp(cfg.team?.be, 1, 6, 1), fe: clamp(cfg.team?.fe, 1, 6, 1), par: clamp(cfg.parallelStories, 1, 6, 3),
-    pace: 'avg', p2: true, p3: true, def: false, hist: true, own: { BE: {}, FE: {} }, devs: { BE: [], FE: [] }
+    pace: 'avg', p2: true, p3: true, def: false, hist: true, own: { BE: {}, FE: {} }, devs: { BE: [], FE: [] }, sprint: normSprint({})
   };
 }
 
@@ -51,7 +65,8 @@ export function normalizeState(raw, base) {
     p2: typeof r.p2 === 'boolean' ? r.p2 : base.p2, p3: typeof r.p3 === 'boolean' ? r.p3 : base.p3,
     def: typeof r.def === 'boolean' ? r.def : base.def, hist: typeof r.hist === 'boolean' ? r.hist : base.hist,
     own: normOwn(r.own),
-    devs: normDevs(r.devs)
+    devs: normDevs(r.devs),
+    sprint: normSprint(r.sprint)
   };
 }
 

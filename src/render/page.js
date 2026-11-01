@@ -265,6 +265,10 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
       <div class="legend" id="legend-sp"></div>
     </div>
     <div id="sp-now"></div>
+    <details class="own" id="sp-cfg-box" open>
+      <summary>تنظیمات اسپرینت پیشنهادی</summary>
+      <div class="own-body" id="sp-cfg"></div>
+    </details>
     <div id="sp-next"></div>
     <h3 class="sub-h">همهٔ اسپرینت‌ها تا پایان پروژه</h3>
     <p class="lead" style="font-size:13px">عدد هر خانه تعداد استوری‌هایی است که آن اپیک در آن اسپرینت تحویل می‌دهد. خانهٔ خط‌چین یعنی کار اپیک در آن اسپرینت در جریان است ولی استوری‌ای تمام نمی‌شود. ستون علامت‌خورده اسپرینت پیشنهادی بعدی است.</p>

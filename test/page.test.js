@@ -15,7 +15,7 @@ const page = (over = {}) => {
 
 test('page has every section container the UI fills by id', () => {
   const html = page();
-  for (const id of ['team', 'kpis', 'whatif', 'ov', 'ov-progress', 'vel-tbl', 'flow', 'flow-q', 'gantt', 'own-tbl', 'people', 'epic-tbl', 'notes', 'sp-next', 'sp-matrix', 'raw-tbl', 'refresh-btn', 'jr-confirm', 'jr-project']) {
+  for (const id of ['team', 'sp-cfg', 'sp-now', 'kpis', 'whatif', 'ov', 'ov-progress', 'vel-tbl', 'flow', 'flow-q', 'gantt', 'own-tbl', 'people', 'epic-tbl', 'notes', 'sp-next', 'sp-matrix', 'raw-tbl', 'refresh-btn', 'jr-confirm', 'jr-project']) {
     assert.ok(html.includes(`id="${id}"`), id);
   }
 });

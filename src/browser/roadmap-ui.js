@@ -13,9 +13,10 @@ import { renderPeople } from '../render/people.js';
 import { renderRaw } from '../render/raw.js';
 import { renderCurrentSprint } from '../render/sprintNow.js';
 import { renderSprints } from '../render/sprints.js';
+import { renderSprintSettings } from '../render/sprintSettings.js';
 import { renderTeam } from '../render/team.js';
 import { renderVelocity } from '../render/velocity.js';
-import { normDevs, normOwn } from '../roadmapState.js';
+import { normDevs, normOwn, normSprint } from '../roadmapState.js';
 import { bindFlow } from './flow-ui.js';
 import { bindOwners } from './owners-ui.js';
 import { bindTooltips } from './tooltip.js';
@@ -75,7 +76,9 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     html('people', renderPeople(R, ui.openPeople));
     html('epic-tbl', renderEpics(R, P));
     html('notes', renderNotes(R, P));
-    const sp = renderSprints(R, P, crit);
+    // the sprint proposal has its own plan when the sprint overrides the team (same plan otherwise)
+    const PS = eng.planForSprint(state);
+    const sp = renderSprints(R, PS, PS === P ? crit : eng.criticalChain(PS.sched));
     html('sp-now', renderCurrentSprint(R));
     html('sp-next', sp.next);
     html('sp-matrix', sp.matrix);
@@ -116,7 +119,10 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
   // the team panel is rebuilt only when its row count or placeholder pace changes, never while someone types in it
   const change = (rebuildTeam = true) => {
     persist();
-    if (rebuildTeam) html('team', renderTeam(R));
+    if (rebuildTeam) {
+      html('team', renderTeam(R));
+      html('sp-cfg', renderSprintSettings(R));
+    }
     render();
   };
 
@@ -138,6 +144,11 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
       state[m[1]] = clamp(state[m[1]] + (m[2] === 'inc' ? 1 : -1));
       change();
     } else if (t.id === 'refresh-btn') onRefresh();
+    else if (t.id === 'sp-reset') {
+      state.sprint = normSprint({});
+      html('sp-cfg', renderSprintSettings(R));
+      change(false);
+    }
   });
   doc.addEventListener('change', (e) => {
     const el = e.target;
@@ -146,6 +157,9 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
       change();
     } else if (/^opt-(p2|p3|def|hist)$/.test(el?.id || '')) {
       state[el.id.slice(4)] = !!el.checked;
+      change(false);
+    } else if (el?.classList?.contains('sp-in')) {
+      state.sprint = normSprint({ ...state.sprint, [el.dataset.k]: el.value === '' ? null : el.value });
       change(false);
     } else if (el?.classList?.contains('dev-name') || el?.classList?.contains('dev-pace-in')) {
       const r = el.dataset.r;
@@ -161,6 +175,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
   });
 
   html('team', renderTeam(R));
+  html('sp-cfg', renderSprintSettings(R));
   render();
 
   return {

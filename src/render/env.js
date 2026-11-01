@@ -20,7 +20,10 @@ export function createEnv(ctx, eng, state) {
     EP: ctx.EP, EP_ORDER: ctx.EP_ORDER, KEY_RE,
     EP_BY_KEY: Object.fromEntries(Object.entries(ctx.EP).filter(([, e]) => e.k).map(([c, e]) => [e.k, c])),
     PACE: eng.PACE, STORY_PACE: eng.STORY_PACE,
-    SPRINTS: ctx.SPRINTS, SPRINT_MARKS: ctx.SPRINT_MARKS, NEXT_SPRINT: ctx.NEXT_SPRINT,
+    SPRINTS: ctx.SPRINTS, SPRINT_MARKS: ctx.SPRINT_MARKS,
+    get NEXT_SPRINT() {
+      return eng.sprintOpts(state);
+    },
     DEP_INFO: ctx.DEP_INFO, ASSIGNED: ctx.ASSIGNED, CURRENT_SPRINT: ctx.CURRENT_SPRINT || null,
     // team members: the ones the user named replace the auto-detected people of the same slot
     get PEOPLE() {

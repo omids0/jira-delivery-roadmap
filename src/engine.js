@@ -46,7 +46,13 @@ export function createEngine(ctx) {
   const STORY_PACE = ctx.SPRINTS.length
     ? ctx.SPRINTS.reduce((a, sp) => a + sp.stories, 0) / ctx.SPRINTS.reduce((a, sp) => a + sp.wd, 0)
     : ctx.defaults.storyPace;
-  const NEXT = ctx.NEXT_SPRINT;
+  /** The proposed sprint: the board's next sprint, overridden by what the user set (state.sprint). */
+  function sprintOpts(state) {
+    const o = state?.sprint || {};
+    const base = ctx.NEXT_SPRINT;
+    const len = o.len ?? base.len ?? 10;
+    return { ...base, n: o.n ?? base.n, start: o.start || base.start, len, firstLen: o.len ?? base.firstLen ?? len, target: o.target || base.target || undefined };
+  }
 
   /** Working list for one set of toggles: filtered, with remaining sub-task counts, ready-to-close and priority rank. */
   function stories(opts) {
@@ -92,14 +98,15 @@ export function createEngine(ctx) {
   /** sub-tasks per workday of each developer: their own figure, else the scenario pace of the role */
   function devPaces(state) {
     const base = PACE[state.pace] || PACE.avg;
+    const keep = 1 - Math.min(80, Math.max(0, Number(state.reserve) || 0)) / 100; // share kept for bugs and other work
     const of = (r, n) => Array.from({ length: n }, (_, i) => {
       const p = Number(state.devs?.[r]?.[i]?.pace);
-      return Number.isFinite(p) && p > 0 ? p : base[r];
+      return (Number.isFinite(p) && p > 0 ? p : base[r]) * keep;
     });
     return { BE: of('BE', state.be), FE: of('FE', state.fe) };
   }
 
-  function buildTasks(list, paceOf, off, par) {
+  function buildTasks(list, paceOf, off, par, NEXT) {
     const tasks = [];
     const tk = {};
     const holdLow = ctx.priority?.holdLow && NEXT ? wdIndex(parseDay(NEXT.start)) + (NEXT.firstLen || NEXT.len || 10) : 0;
@@ -334,10 +341,17 @@ export function createEngine(ctx) {
     const owners = resolveOwners(list, state.be, state.fe, state.own, paces);
     const base = PACE[state.pace] || PACE.avg;
     const paceOf = (r, ep) => paces[r][owners.own[r][ep]] ?? base[r];
-    const tasks = buildTasks(list, paceOf, off, par);
+    const tasks = buildTasks(list, paceOf, off, par, sprintOpts(state));
     const sched = schedule(tasks, state.be, state.fe, off, par, owners);
     const span = Math.max(off, ...[...sched.values()].map((v) => v.e));
     return { list, tasks, sched, span, off, owners, paces };
+  }
+
+  /** The plan the sprint proposal is built from: the main plan, unless the sprint has its own team size, parallelism or reserve. */
+  function planForSprint(state) {
+    const o = state.sprint || {};
+    if (o.be == null && o.fe == null && o.par == null && !o.reserve) return plan(state);
+    return plan({ ...state, be: o.be ?? state.be, fe: o.fe ?? state.fe, par: o.par ?? state.par, reserve: o.reserve || 0 });
   }
 
   function epicFinish(P) {
@@ -355,6 +369,7 @@ export function createEngine(ctx) {
 
   /** Sprint-by-sprint proposal: which stories finish in which sprint, load vs capacity, epic goals. */
   function sprintPlan(P, state) {
+    const NEXT = sprintOpts(state);
     const SPRINT_LEN = NEXT.len || 10;
     const s0 = wdIndex(parseDay(NEXT.start));
     const n0 = NEXT.n;
@@ -406,5 +421,5 @@ export function createEngine(ctx) {
     return { sprints: out, sprintOf };
   }
 
-  return { cal, PACE, STORY_PACE, devPaces, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
+  return { cal, PACE, STORY_PACE, devPaces, sprintOpts, planForSprint, stories, plan, unlimited, criticalChain, epicFinish, sprintPlan, resolveOwners };
 }
