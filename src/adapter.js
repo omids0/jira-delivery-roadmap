@@ -105,10 +105,17 @@ export function buildContext({ raw, model, sprints, assigned, cfg, baseUrl, proj
   let people = cfg.people;
   if (!Array.isArray(people) || !people.length) {
     people = [];
+    // someone with sub-tasks in both roles is listed once, in the role where they do more
+    const tally = {};
+    subNorm.filter((t) => t.assignee).forEach((t) => {
+      const c = (tally[t.assignee] = tally[t.assignee] || { be: 0, fe: 0 });
+      c[t.role]++;
+    });
     for (const role of ['be', 'fe']) {
-      const count = {};
-      subNorm.filter((t) => t.role === role && t.assignee).forEach((t) => (count[t.assignee] = (count[t.assignee] || 0) + 1));
-      Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6)
+      Object.entries(tally)
+        .filter(([, c]) => (role === 'be' ? c.be >= c.fe : c.fe > c.be))
+        .sort((a, b) => b[1][role] - a[1][role])
+        .slice(0, 6)
         .forEach(([name], i) => people.push({ role: role.toUpperCase(), n: i + 1, name, jira: [name] }));
     }
   }

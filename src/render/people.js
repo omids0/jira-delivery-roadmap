@@ -19,7 +19,15 @@ export function renderPeople(R, open = new Set()) {
     const p = PEOPLE.find((x) => x.role === m.r && x.n === m.i + 1);
     return p ? (p.jira || []) : [];
   };
-  const mapped = new Set(members.flatMap(jiraOf));
+  // each Jira person gets one card: a later slot whose people are all shown already is skipped
+  const mapped = new Set();
+  const shown = [];
+  for (const m of members) {
+    const ids = jiraOf(m);
+    if (ids.length && ids.every((x) => mapped.has(x))) continue;
+    ids.forEach((x) => mapped.add(x));
+    shown.push(m);
+  }
   const prioRank = (p) => ({ Highest: 0, High: 1, Medium: 2, Low: 3, Lowest: 4 }[p] ?? 5);
   const sort = (list) => list.slice().sort((x, y) => (x[4] === 'In Progress' ? 0 : 1) - (y[4] === 'In Progress' ? 0 : 1) || prioRank(x[8]) - prioRank(y[8]) || String(x[0]).localeCompare(String(y[0]), 'en', { numeric: true }));
   const epName = (k) => {
@@ -39,7 +47,7 @@ export function renderPeople(R, open = new Set()) {
     const head = `<summary class="person-h"><span class="nm">${title}</span>${sub ? `<span>${esc(sub)}</span>` : ''}<span><b>${fa(list.length)}</b> کار باز</span>${counts(list)}</summary>`;
     return `<details class="person" data-pk="${esc(pk)}"${open.has(pk) ? ' open' : ''}>${head}${list.length ? table(list) : '<div class="empty">در Jira کار بازی به این نفر assign نشده است.</div>'}</details>`;
   };
-  let h = members.map((m) => {
+  let h = shown.map((m) => {
     const ids = jiraOf(m);
     return card(`${m.r}:${m.i}`, `<span class="role-dot ${m.r.toLowerCase()}"></span>${esc(personName(m.r, m.i))}`, ids.length ? ids.join('، ') : 'هنوز به کسی در Jira وصل نشده', rows.filter((x) => ids.includes(x[5])));
   }).join('');
