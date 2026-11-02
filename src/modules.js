@@ -55,9 +55,11 @@ export function buildModules(model, cfg) {
   };
 
   const byId = {};
+  const of = {}; // story key -> its module { id, label }
   const totals = { done: 0, inProgress: 0, backlog: 0, total: 0 };
   for (const s of stories) {
     const { id, label } = moduleOf(s);
+    of[s.key] = { id, label };
     const m = (byId[id] = byId[id] || { id, label, done: 0, inProgress: 0, backlog: 0, total: 0 });
     const state = trueState(s);
     const key = state === 'done' ? 'done' : state === 'inprogress' ? 'inProgress' : 'backlog';
@@ -68,5 +70,5 @@ export function buildModules(model, cfg) {
   }
   // biggest first; equal sizes keep the order the modules were first met in, the catch-all group last
   const modules = Object.values(byId).sort((a, b) => b.total - a.total || (a.id === OTHER) - (b.id === OTHER));
-  return { mode, modules, totals };
+  return { mode, modules, totals, of };
 }

@@ -69,6 +69,16 @@ details.person>summary:focus-visible{outline:2px solid var(--accent);outline-off
 .pill.d::before{background:var(--s3)}.pill.w::before{background:var(--s4)}.pill.b::before{background:var(--s7)}
 @media (max-width:640px){.module-row{grid-template-columns:1fr;gap:6px}.module-pct{text-align:right}}
 [hidden]{display:none!important}
+.fe-plan{display:grid;gap:12px}
+.fe-blk{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:grid;gap:8px}
+.fe-h{margin:0;font-size:14px}
+.fe-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fe-list li{display:grid;gap:1px;font-size:13px}
+.fe-list .l1{display:flex;gap:8px;align-items:baseline}
+.fe-list .l1 span{min-width:0}
+.fe-list a{color:var(--accent);text-decoration:none;flex:none}
+.fe-list .m2{color:var(--muted);font-size:11.5px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.fe-note{margin:0;color:var(--fg2);font-size:12.5px}
 .q-notes{margin:6px 0 0;padding-inline-start:20px;color:var(--fg2);font-size:13px}
 `;
 
@@ -243,7 +253,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="block-head">
       <div>
         <h2>نوبت فرانت</h2>
-        <p class="lead">استوری‌هایی که همهٔ sub-taskهای بک‌اندشان در Jira Done شده و sub-taskهای فرانتشان هنوز باز است؛ فرانت از همین فهرست کار برمی‌دارد. استوری‌ای که sub-task بک‌اند ندارد اینجا نمی‌آید، چون Done بودن بک‌اندش قابل اثبات نیست. فهرست جدا و بسته‌ی پایین، استوری‌هایی است که بیش از نصف بک‌اندشان تمام شده و با قرارداد API می‌شود شروع کرد، ولی هنوز قطعی نیست.</p>
+        <p class="lead">استوری‌هایی که همهٔ sub-taskهای بک‌اندشان در Jira Done شده و فرانتشان هنوز شروع نشده (sub-task فرانت ندارند). از هر ماژول فقط یک استوری هم‌زمان پیشنهاد می‌شود، چون استوری‌های یک ماژول فایل‌های مشترک دارند؛ بقیه پشت‌سرش صف می‌شوند. کارهای در حال انجام فرانت هم همین‌جاست. استوری‌ای که sub-task بک‌اند ندارد نمی‌آید، چون Done بودن بک‌اندش قابل اثبات نیست. فهرست بستهٔ پایین، استوری‌هایی است که بیش از نصف بک‌اندشان تمام شده و با قرارداد API می‌شود شروع کرد، ولی هنوز قطعی نیست.</p>
       </div>
     </div>
     <div id="fe-ready"></div>
