@@ -151,17 +151,38 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
 
   // sticky section menu: smooth-scroll below the sticky bar and mark the section in view
   const barHeight = () => doc.querySelector('.jr-bar')?.offsetHeight || 0;
+  const markNav = (cur) => {
+    for (const a of doc.querySelectorAll('.jr-nav a.on')) if (a !== cur) a.classList.remove('on');
+    if (cur && !cur.classList.contains('on')) {
+      cur.classList.add('on');
+      cur.scrollIntoView?.({ inline: 'center', block: 'nearest' }); // keep the active link visible in a narrow menu (RTL-safe)
+    }
+  };
+  // while a click-initiated smooth scroll runs, the menu must not follow the sections flying past
+  let navLock = null;
+  const lockNav = (ms) => {
+    clearTimeout(navLock);
+    navLock = setTimeout(() => {
+      navLock = null;
+    }, ms);
+  };
   doc.addEventListener('click', (e) => {
     const a = e.target?.closest?.('a[data-jr-go]');
     const target = a && $(a.dataset.jrGo);
     if (!target) return;
     e.preventDefault();
+    markNav(a);
+    lockNav(400);
     if (target.tagName === 'DETAILS') target.open = true;
     const top = target.getBoundingClientRect().top + (doc.defaultView?.scrollY || 0) - barHeight() - 8;
     doc.defaultView?.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   });
   let spyQueued = false;
   doc.addEventListener('scroll', () => {
+    if (navLock) {
+      lockNav(150); // still scrolling: release 150 ms after the last scroll event
+      return;
+    }
     if (spyQueued) return;
     spyQueued = true;
     (doc.defaultView?.requestAnimationFrame || ((f) => f()))(() => {
@@ -172,11 +193,7 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
         const el = $(a.dataset.jrGo);
         if (el && !el.hidden && el.getBoundingClientRect().top <= line) cur = a;
       }
-      for (const a of doc.querySelectorAll('.jr-nav a.on')) if (a !== cur) a.classList.remove('on');
-      if (cur && !cur.classList.contains('on')) {
-        cur.classList.add('on');
-        cur.scrollIntoView?.({ inline: 'center', block: 'nearest' }); // keep the active link visible in a narrow menu (RTL-safe)
-      }
+      markNav(cur);
     });
   }, { passive: true });
 
