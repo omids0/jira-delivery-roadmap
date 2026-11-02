@@ -91,6 +91,8 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
     html('sp-now', renderCurrentSprint(R));
     const cur = ctx.CURRENT_SPRINT;
     if ($('now-sec')) $('now-sec').hidden = !cur; // no running sprint: the whole section stays hidden
+    const nowLink = doc.querySelector('[data-jr-go="now-sec"]');
+    if (nowLink) nowLink.hidden = !cur;
     html('sp-order', cur ? renderSprintOrder(R, eng.planSprintNow(state, P, cur.epics.flatMap((g) => g.items.filter((x) => x.cat !== 'done').map((x) => x.k)), cur.days.left)) : '');
     html('sp-wl', renderWorklogPanel(R));
     html('sp-next', sp.next);
@@ -146,6 +148,37 @@ export function mountRoadmap({ doc, ctx, eng, state, persist, onRefresh }) {
       else ui.openPeople.delete(pk);
     }
   }, true);
+
+  // sticky section menu: smooth-scroll below the sticky bar and mark the section in view
+  const barHeight = () => doc.querySelector('.jr-bar')?.offsetHeight || 0;
+  doc.addEventListener('click', (e) => {
+    const a = e.target?.closest?.('a[data-jr-go]');
+    const target = a && $(a.dataset.jrGo);
+    if (!target) return;
+    e.preventDefault();
+    if (target.tagName === 'DETAILS') target.open = true;
+    const top = target.getBoundingClientRect().top + (doc.defaultView?.scrollY || 0) - barHeight() - 8;
+    doc.defaultView?.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  });
+  let spyQueued = false;
+  doc.addEventListener('scroll', () => {
+    if (spyQueued) return;
+    spyQueued = true;
+    (doc.defaultView?.requestAnimationFrame || ((f) => f()))(() => {
+      spyQueued = false;
+      const line = barHeight() + 24;
+      let cur = null;
+      for (const a of doc.querySelectorAll('.jr-nav a[data-jr-go]')) {
+        const el = $(a.dataset.jrGo);
+        if (el && !el.hidden && el.getBoundingClientRect().top <= line) cur = a;
+      }
+      for (const a of doc.querySelectorAll('.jr-nav a.on')) if (a !== cur) a.classList.remove('on');
+      if (cur && !cur.classList.contains('on')) {
+        cur.classList.add('on');
+        cur.scrollIntoView?.({ inline: 'center', block: 'nearest' }); // keep the active link visible in a narrow menu (RTL-safe)
+      }
+    });
+  }, { passive: true });
 
   // controls: delegated on the document itself (the page is rewritten by document.write on a repaint)
   doc.addEventListener('click', (e) => {

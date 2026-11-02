@@ -6,6 +6,11 @@ import { CSS } from './style.js';
 const EXTRA_CSS = `
 .jr-bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 .jr-bar b{font-size:14px}
+.jr-nav{flex:1 0 100%;display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;margin-inline:-6px;padding:0 6px 2px}
+.jr-nav a{flex:none;font-size:12.5px;line-height:1.5;padding:2px 11px;border-radius:999px;color:var(--fg2);text-decoration:none;border:1px solid transparent;white-space:nowrap}
+.jr-nav a:hover{background:var(--sunk);color:var(--fg)}
+.jr-nav a.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.jr-nav a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .jr-bar .jr-end{display:flex;align-items:center;gap:8px;margin-inline-start:auto}
 .jr-bar .jr-ico{padding:4px 10px;min-width:34px}
 .jr-bar .ico-sun{display:none}
@@ -98,6 +103,26 @@ export const renderLoading = (text) => html(`<main style="text-align:center;padd
 
 const themeButton = '<button id="jr-theme" class="jr-ico" type="button" aria-label="تغییر پوسته (روز / شب)" title="روز / شب"><span class="ico-moon" aria-hidden="true">☾</span><span class="ico-sun" aria-hidden="true">☀</span></button>';
 
+/** Sticky section menu: [section id, label]; sections that can be absent carry a hidden flag set by roadmap-ui. */
+export const NAV = [
+  ['team-box', 'تیم'],
+  ['kpis', 'خلاصه'],
+  ['mod-sec', 'ماژول‌ها'],
+  ['fe-sec', 'نوبت فرانت'],
+  ['overview', 'نقشهٔ کلی'],
+  ['vel-sec', 'سرعت تیم'],
+  ['flow-sec', 'فلوچارت'],
+  ['gantt-sec', 'خط زمانی'],
+  ['people-sec', 'کارهای هر نفر'],
+  ['epics-sec', 'تحویل اپیک‌ها'],
+  ['notes-sec', 'پیش از شروع'],
+  ['now-sec', 'اسپرینت جاری'],
+  ['sprint-sec', 'اسپرینت بعدی'],
+  ['raw-box', 'جدول کامل']
+];
+
+const nav = () => `<nav class="jr-nav" aria-label="فهرست بخش‌ها">${NAV.map(([id, label]) => `<a href="#${id}" data-jr-go="${id}"${id === 'now-sec' ? ' hidden' : ''}>${esc(label)}</a>`).join('')}</nav>`;
+
 const bar = ({ projects, user, key, withRefresh = false }) => `<div class="jr-bar">
   <b>نقشه راه تحویل</b>
   <select id="jr-project" aria-label="پروژه">
@@ -111,6 +136,7 @@ const bar = ({ projects, user, key, withRefresh = false }) => `<div class="jr-ba
     ${themeButton}
     <button id="jr-close" type="button">بستن</button>
   </div>
+  ${withRefresh ? nav() : ''}
 </div>`;
 
 /** Home / error page: only the project picker. */
@@ -235,7 +261,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="gantt-scroll"><div class="ov" id="ov"></div></div>
   </section>
 
-  <section class="block">
+  <section class="block" id="vel-sec">
     <div class="block-head">
       <div>
         <h2>سرعت واقعی تیم</h2>
@@ -266,7 +292,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="flow-scroll"><div class="flow" id="flow"></div></div>
   </section>
 
-  <section class="block">
+  <section class="block" id="gantt-sec">
     <div class="block-head">
       <div>
         <h2>خط زمانی نفرات</h2>
@@ -295,7 +321,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="people" id="people"></div>
   </section>
 
-  <section class="block">
+  <section class="block" id="epics-sec">
     <div class="block-head">
       <div>
         <h2>نقطهٔ تحویل هر اپیک</h2>
@@ -305,7 +331,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="tbl-scroll"><table id="epic-tbl"></table></div>
   </section>
 
-  <section class="block">
+  <section class="block" id="notes-sec">
     <h2>پیش از شروع</h2>
     <div class="notes" id="notes"></div>
   </section>
@@ -343,7 +369,7 @@ export function renderPage(R, { projects, user, key, projectName, settings, save
     <div class="tbl-scroll"><table class="mx" id="sp-matrix"></table></div>
   </section>
 
-  <details class="raw">
+  <details class="raw" id="raw-box">
     <summary>جدول کامل زمان‌بندی کارها</summary>
     <div class="tbl-scroll"><table id="raw-tbl"></table></div>
   </details>
